@@ -148,6 +148,8 @@ export interface ChatMessage {
   actionResult?: string;
   final?: boolean;
   isStreaming?: boolean;
+  musicCues?: MusicCue[];
+  musicGenerationStatus?: 'generating' | 'completed' | 'failed';
 }
 
 export interface AppliedActionRecord {

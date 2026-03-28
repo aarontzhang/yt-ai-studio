@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useCallback, useEffect, useMemo } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { useEditorStore } from '@/lib/useEditorStore';
 import {
   AnalysisProgress,
@@ -9,11 +10,14 @@ import {
   CaptionEntry,
   EditAction,
   MarkerEntry,
+  MusicCue,
   SilenceCandidate,
   SourceIndexAnalysisStateMap,
   SourceIndexTaskState,
   VisualSearchSession,
 } from '@/lib/types';
+import { ensureMusicGenerationJob, fetchMusicCues, getLatestMusicJobForAsset, updateMusicCueStatus } from '@/lib/musicJobs';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
 import { buildTimelineSilenceCandidates, formatTime, formatTimePrecise, getSourceSegmentsForTimelineRange, buildTranscriptContext, getTimelineDuration, sourceRangesForAction, projectCaptionWordsToTimeline } from '@/lib/timelineUtils';
 import {
   buildReviewGroupWithUpdatedItems,
@@ -1559,6 +1563,197 @@ function AutoIdentity({
   );
 }
 
+// ─── Music helpers ─────────────────────────────────────────────────────────────
+function dbToLinear(db: number): number {
+  return Math.pow(10, db / 20);
+}
+
+const MUSIC_MOOD_COLORS: Record<string, string> = {
+  upbeat: '#f59e0b',
+  calm: '#06b6d4',
+  dramatic: '#ef4444',
+  melancholic: '#8b5cf6',
+  playful: '#10b981',
+  suspenseful: '#f97316',
+  inspirational: '#3b82f6',
+  neutral: '#9ca3af',
+};
+
+function formatMusicTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function MusicGeneratingCard({ progress }: { progress: { stage: string; completed: number; total: number } | null }) {
+  return (
+    <div style={{
+      padding: '10px 12px',
+      borderRadius: 8,
+      border: '1px solid rgba(255,255,255,0.08)',
+      background: 'rgba(255,255,255,0.03)',
+    }}>
+      <div style={{ fontSize: 12, color: 'var(--fg-secondary)', marginBottom: progress ? 8 : 0, fontFamily: 'var(--font-serif)' }}>
+        {progress ? progress.stage.replace(/_/g, ' ') : 'Generating background music…'}
+      </div>
+      {progress && (
+        <>
+          <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 4 }}>
+            <div style={{
+              height: '100%', borderRadius: 2, background: 'var(--accent)',
+              width: `${Math.round((progress.completed / Math.max(1, progress.total)) * 100)}%`,
+              transition: 'width 0.3s ease',
+            }} />
+          </div>
+          <div style={{ fontSize: 10, color: 'var(--fg-muted)', fontFamily: 'var(--font-serif)' }}>
+            {progress.completed} / {progress.total}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function MusicCueCard({
+  cue,
+  onAccept,
+  onReject,
+  onVolumeChange,
+}: {
+  cue: MusicCue;
+  onAccept: (cue: MusicCue) => void;
+  onReject: (id: string) => void;
+  onVolumeChange: (id: string, volumeDb: number) => void;
+}) {
+  const color = MUSIC_MOOD_COLORS[cue.mood] ?? '#9ca3af';
+  const isSuggested = cue.status === 'suggested';
+  const isAccepted = cue.status === 'accepted';
+  const isRejected = cue.status === 'rejected';
+  return (
+    <div style={{
+      padding: '8px 10px', borderRadius: 8,
+      border: `1px solid ${isAccepted ? 'var(--accent)' : isRejected ? 'var(--border)' : 'var(--border-mid)'}`,
+      background: isRejected ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
+      opacity: isRejected ? 0.5 : 1,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: color + '22', color, textTransform: 'capitalize' }}>
+          {cue.mood}
+        </span>
+        <span style={{ fontSize: 10, color: 'var(--fg-muted)' }}>{cue.energy} energy</span>
+        <span style={{ fontSize: 10, color: 'var(--fg-muted)', marginLeft: 'auto' }}>
+          {formatMusicTime(cue.sourceStart)} – {formatMusicTime(cue.sourceEnd)}
+        </span>
+      </div>
+      {cue.genreHints.length > 0 && (
+        <div style={{ fontSize: 10, color: 'var(--fg-muted)', marginBottom: 6 }}>{cue.genreHints.join(', ')}</div>
+      )}
+      {isSuggested && (
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button type="button" onClick={() => onAccept(cue)} style={{ flex: 1, border: '1px solid var(--accent)', borderRadius: 6, background: 'rgba(59,130,246,0.1)', color: 'var(--accent)', fontSize: 11, padding: '4px 8px', cursor: 'pointer' }}>
+            Accept
+          </button>
+          <button type="button" onClick={() => onReject(cue.id)} style={{ flex: 1, border: '1px solid var(--border-mid)', borderRadius: 6, background: 'rgba(255,255,255,0.04)', color: 'var(--fg-secondary)', fontSize: 11, padding: '4px 8px', cursor: 'pointer' }}>
+            Reject
+          </button>
+        </div>
+      )}
+      {isAccepted && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-serif)' }}>✓ Accepted</span>
+            <button type="button" onClick={() => onReject(cue.id)} style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}>
+              Remove
+            </button>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <label style={{ fontSize: 10, color: 'var(--fg-muted)', whiteSpace: 'nowrap' }}>Volume</label>
+            <input type="range" min={-30} max={0} step={1} value={cue.volumeDb}
+              onChange={(e) => onVolumeChange(cue.id, Number(e.target.value))}
+              style={{ flex: 1, height: 2 }} />
+            <span style={{ fontSize: 10, color: 'var(--fg-muted)', minWidth: 32, textAlign: 'right' }}>{cue.volumeDb}dB</span>
+          </div>
+        </div>
+      )}
+      {cue.status === 'failed' && (
+        <div style={{ fontSize: 10, color: '#ef4444' }}>Generation failed</div>
+      )}
+    </div>
+  );
+}
+
+function MusicCuesBlock({ musicCues, musicGenerationStatus }: { musicCues?: MusicCue[]; musicGenerationStatus?: string }) {
+  const musicGeneration = useEditorStore(s => s.musicGeneration);
+  const musicClips = useEditorStore(s => s.musicClips);
+  const acceptMusicCue = useEditorStore(s => s.acceptMusicCue);
+  const rejectMusicCue = useEditorStore(s => s.rejectMusicCue);
+  const updateMusicCue = useEditorStore(s => s.updateMusicCue);
+  const importSources = useEditorStore(s => s.importSources);
+  const addMusicClip = useEditorStore(s => s.addMusicClip);
+  const deleteMusicClip = useEditorStore(s => s.deleteMusicClip);
+  const setMusicClipVolume = useEditorStore(s => s.setMusicClipVolume);
+
+  const activateCue = useCallback(async (cue: MusicCue) => {
+    if (!cue.storagePath) return;
+    const audioProxyUrl = `/api/music/${cue.id}/audio`;
+    const sourceId = `music-cue-${cue.id}`;
+    importSources(
+      [{ id: sourceId, fileName: `music_${cue.mood}_${cue.id}.mp3`, duration: cue.durationSeconds, isPrimary: false, runtime: { objectUrl: audioProxyUrl, playerUrl: audioProxyUrl } }],
+      { shouldAppendClips: false },
+    );
+    addMusicClip({ id: uuidv4(), sourceId, timelineStart: cue.sourceStart, duration: cue.durationSeconds, sourceOffset: 0, volume: dbToLinear(cue.volumeDb), fadeIn: cue.fadeInSeconds, fadeOut: cue.fadeOutSeconds });
+  }, [importSources, addMusicClip]);
+
+  const getClipIdForCue = useCallback((cueId: string) => {
+    return musicClips.find(c => c.sourceId === `music-cue-${cueId}`)?.id;
+  }, [musicClips]);
+
+  const handleCueAccept = useCallback((cue: MusicCue) => {
+    acceptMusicCue(cue.id);
+    void activateCue(cue);
+    const supabase = getSupabaseBrowser();
+    updateMusicCueStatus(supabase, cue.id, { status: 'accepted' }).catch(console.error);
+  }, [acceptMusicCue, activateCue]);
+
+  const handleCueReject = useCallback((cueId: string) => {
+    rejectMusicCue(cueId);
+    const clipId = getClipIdForCue(cueId);
+    if (clipId) deleteMusicClip(clipId);
+    const supabase = getSupabaseBrowser();
+    updateMusicCueStatus(supabase, cueId, { status: 'rejected' }).catch(console.error);
+  }, [rejectMusicCue, getClipIdForCue, deleteMusicClip]);
+
+  const handleCueVolumeChange = useCallback((cueId: string, volumeDb: number) => {
+    updateMusicCue(cueId, { volumeDb });
+    const clipId = getClipIdForCue(cueId);
+    if (clipId) setMusicClipVolume(clipId, dbToLinear(volumeDb));
+    const supabase = getSupabaseBrowser();
+    updateMusicCueStatus(supabase, cueId, { volume_db: volumeDb }).catch(console.error);
+  }, [updateMusicCue, getClipIdForCue, setMusicClipVolume]);
+
+  const isGenerating = musicGenerationStatus === 'generating';
+  const hasCues = musicCues && musicCues.length > 0;
+  if (!isGenerating && !hasCues) return null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, width: '100%' }}>
+      {isGenerating && <MusicGeneratingCard progress={musicGeneration.progress} />}
+      {hasCues && musicCues!.map(staticCue => {
+        const liveCue = musicGeneration.cues.find(c => c.id === staticCue.id) ?? staticCue;
+        return (
+          <MusicCueCard
+            key={staticCue.id}
+            cue={liveCue}
+            onAccept={handleCueAccept}
+            onReject={handleCueReject}
+            onVolumeChange={handleCueVolumeChange}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Message bubbles ───────────────────────────────────────────────────────────
 function UserMessage({ msg }: { msg: ChatMessageType }) {
   return (
@@ -2145,6 +2340,9 @@ function AssistantMessage({
             )}
           </div>
         )}
+        {(msg.musicCues || msg.musicGenerationStatus) && (
+          <MusicCuesBlock musicCues={msg.musicCues} musicGenerationStatus={msg.musicGenerationStatus} />
+        )}
       </div>
     </div>
   );
@@ -2460,6 +2658,9 @@ export default function ChatSidebar() {
   const requestSeek = useEditorStore(s => s.requestSeek);
   const previewOwnerId = useEditorStore(s => s.previewOwnerId);
   const reviewLocked = previewOwnerId !== null;
+  const musicGeneration = useEditorStore(s => s.musicGeneration);
+  const setMusicGeneration = useEditorStore(s => s.setMusicGeneration);
+  const musicPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const mainTimelineDuration = useMemo(() => getTimelineDuration(clips), [clips]);
   const availableSources = useMemo(() => (
     resolveProjectSources({
@@ -2493,6 +2694,19 @@ export default function ChatSidebar() {
   );
   useEffect(() => {
     requestChainStateRef.current = {};
+  }, [currentProjectId]);
+
+  // Restore music cue cards if a generating message exists but generation already completed (e.g. page reload)
+  useEffect(() => {
+    if (musicGeneration.status !== 'completed' || musicGeneration.cues.length === 0) return;
+    const storeMessages = useEditorStore.getState().messages;
+    const generatingMsg = storeMessages.find(m => m.musicGenerationStatus === 'generating');
+    if (!generatingMsg) return;
+    useEditorStore.getState().updateMessage(generatingMsg.id, {
+      musicGenerationStatus: 'completed',
+      musicCues: musicGeneration.cues,
+    });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProjectId]);
 
   useEffect(() => {
@@ -2817,9 +3031,57 @@ export default function ChatSidebar() {
     }
   }, [addMessage, initialIndexingReady, runSingleTurn, setIsChatLoading]);
 
+  const handleMusicCommand = useCallback(async () => {
+    const primarySource = sources.find(s => s.isPrimary);
+    if (!currentProjectId || !primarySource?.assetId) {
+      addMessage({ role: 'assistant', content: 'No video loaded. Please upload a video before generating music.' });
+      return;
+    }
+    addMessage({ role: 'user', content: '/music' });
+    const assistantMsgId = addMessage({ role: 'assistant', content: '', musicGenerationStatus: 'generating' });
+    try {
+      const supabase = getSupabaseBrowser();
+      const job = await ensureMusicGenerationJob(supabase, currentProjectId, primarySource.assetId);
+      if (job) {
+        setMusicGeneration({ ...musicGeneration, jobId: job.jobId, status: job.status, progress: job.progress });
+      }
+      if (musicPollRef.current) clearInterval(musicPollRef.current);
+      musicPollRef.current = setInterval(async () => {
+        const supabaseInner = getSupabaseBrowser();
+        const jobState = await getLatestMusicJobForAsset(supabaseInner, currentProjectId, primarySource.assetId!);
+        if (!jobState) return;
+        if (jobState.status === 'completed' || jobState.status === 'failed') {
+          if (musicPollRef.current) clearInterval(musicPollRef.current);
+          const cues = jobState.status === 'completed'
+            ? await fetchMusicCues(supabaseInner, currentProjectId)
+            : [];
+          setMusicGeneration({ ...useEditorStore.getState().musicGeneration, status: jobState.status ?? 'completed', error: jobState.error ?? null, cues, progress: null });
+          useEditorStore.getState().updateMessage(assistantMsgId, {
+            musicGenerationStatus: jobState.status === 'completed' ? 'completed' : 'failed',
+            musicCues: cues.length > 0 ? cues : undefined,
+          });
+        } else {
+          setMusicGeneration({ ...useEditorStore.getState().musicGeneration, status: jobState.status ?? musicGeneration.status, progress: jobState.progress ?? null });
+        }
+      }, 3000);
+    } catch (err) {
+      console.error('Music generation failed:', err);
+      useEditorStore.getState().updateMessage(assistantMsgId, { musicGenerationStatus: 'failed', content: 'Music generation failed. Please try again.' });
+    }
+  }, [addMessage, currentProjectId, musicGeneration, setMusicGeneration, sources]);
+
   const handleSendSingle = useCallback(async () => {
     const text = input.trim();
     if (!text || isChatLoading || reviewLocked || !initialIndexingReady) return;
+
+    if (text.toLowerCase() === '/music') {
+      setInput('');
+      setActiveMarkerMention(null);
+      if (textareaRef.current) textareaRef.current.style.height = 'auto';
+      await handleMusicCommand();
+      return;
+    }
+
     const requestChainId = crypto.randomUUID();
     requestChainStateRef.current[requestChainId] = {
       requestChainId,
@@ -2863,7 +3125,7 @@ export default function ChatSidebar() {
       setLoadingStatus('');
       setLoadingPhaseId(null);
     }
-  }, [addMessage, initialIndexingReady, input, isChatLoading, messages, reviewLocked, runSingleTurn, setIsChatLoading, useServerSourceIndex]);
+  }, [addMessage, handleMusicCommand, initialIndexingReady, input, isChatLoading, messages, reviewLocked, runSingleTurn, setIsChatLoading, useServerSourceIndex]);
 
   const handleTranscriptReady = useCallback(async (messageId: string) => {
     if (!initialIndexingReady) return;
