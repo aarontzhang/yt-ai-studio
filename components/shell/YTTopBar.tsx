@@ -128,13 +128,16 @@ export default function YTTopBar({ onUploadClick }: YTTopBarProps) {
         {/* Create button — opens dropdown */}
         <YTCreateMenu onUploadClick={onUploadClick} />
 
-        {/* Avatar — placeholder grey circle */}
+        {/* Avatar */}
         <button
-          className="w-8 h-8 rounded-full bg-yt-elevated border border-yt-border shrink-0
+          className="w-8 h-8 rounded-full shrink-0 flex items-center justify-center
                      focus-visible:outline-2 focus-visible:outline-[#3ea6ff]"
+          style={{ background: 'linear-gradient(135deg, #4285F4, #34A853)' }}
           aria-label="Account"
           onClick={() => {}}
-        />
+        >
+          <span className="text-white font-yt text-xs font-medium">F</span>
+        </button>
       </div>
     </header>
   );

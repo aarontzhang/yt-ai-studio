@@ -26,37 +26,44 @@ interface VideoRow {
 
 const MOCK_VIDEOS: VideoRow[] = [
   {
-    id: '1', title: '2/7/25', description: null, thumbnail: null,
+    id: '1', title: 'Morning Surf Session — Malibu Pier', description: null,
+    thumbnail: 'hsl(200, 60%, 35%)',
     duration: '5:59', visibility: 'Private', restrictions: 'None',
     date: 'Mar 21, 2026', dateLabel: 'Uploaded', views: 0, comments: 0, likes: '–',
   },
   {
-    id: '2', title: '3/5/26 handstander', description: null, thumbnail: null,
+    id: '2', title: 'How I Learned to Handstand in 30 Days', description: null,
+    thumbnail: 'hsl(340, 55%, 40%)',
     duration: '17:40', visibility: 'Private', restrictions: 'None',
     date: 'Mar 20, 2026', dateLabel: 'Uploaded', views: 0, comments: 0, likes: '–',
   },
   {
-    id: '3', title: '3/13/26 yea', description: null, thumbnail: null,
+    id: '3', title: 'NYC Street Food Tour — Best Hidden Gems', description: null,
+    thumbnail: 'hsl(30, 70%, 38%)',
     duration: '4:59', visibility: 'Private', restrictions: 'None',
     date: 'Mar 20, 2026', dateLabel: 'Uploaded', views: 0, comments: 0, likes: '–',
   },
   {
-    id: '4', title: '3/1/26 human flagging', description: null, thumbnail: null,
+    id: '4', title: 'My Honest Review of the New MacBook Pro M5', description: null,
+    thumbnail: 'hsl(260, 45%, 40%)',
     duration: '4:31', visibility: 'Private', restrictions: 'None',
     date: 'Mar 1, 2026', dateLabel: 'Uploaded', views: 1, comments: 0, likes: '–',
   },
   {
-    id: '5', title: '2/11 dragon flagon', description: null, thumbnail: null,
+    id: '5', title: 'Building a Treehouse From Scratch (No Plans)', description: null,
+    thumbnail: 'hsl(140, 50%, 32%)',
     duration: '17:25', visibility: 'Private', restrictions: 'None',
     date: 'Feb 22, 2026', dateLabel: 'Uploaded', views: 0, comments: 0, likes: '–',
   },
   {
-    id: '6', title: 'The College to Climate 30 List Video Submis...', description: null, thumbnail: null,
+    id: '6', title: 'The College to Climate 30 List Video Submission', description: null,
+    thumbnail: 'hsl(180, 50%, 35%)',
     duration: '12:36', visibility: 'Unlisted', restrictions: 'None',
     date: 'Feb 20, 2026', dateLabel: 'Uploaded', views: 1, comments: 0, likes: '–',
   },
   {
-    id: '7', title: 'Adobe ADBE Feedback', description: null, thumbnail: null,
+    id: '7', title: 'What Nobody Tells You About Moving to Austin', description: null,
+    thumbnail: 'hsl(15, 65%, 42%)',
     duration: '8:12', visibility: 'Unlisted', restrictions: 'None',
     date: 'Feb 19, 2026', dateLabel: 'Uploaded', views: 4, comments: 0, likes: '–',
   },
@@ -210,14 +217,17 @@ export default function ChannelContentPage({ onOpenDetails }: ChannelContentPage
               {/* Video (thumbnail + title) */}
               <td style={{ padding: '12px 16px', verticalAlign: 'middle' }}>
                 <div className="flex items-center gap-4">
-                  {/* Thumbnail placeholder */}
+                  {/* Thumbnail */}
                   <div
-                    className="shrink-0 bg-yt-overlay relative"
+                    className="shrink-0 relative"
                     style={{
                       width: 120,
                       height: 68,
                       borderRadius: 4,
                       overflow: 'hidden',
+                      background: video.thumbnail
+                        ? `linear-gradient(135deg, ${video.thumbnail}, ${video.thumbnail.replace(')', ', 0.6)')})`
+                        : '#282828',
                     }}
                   >
                     {/* Duration badge */}

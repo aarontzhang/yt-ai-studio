@@ -116,10 +116,15 @@ export default function YTSidebar() {
     >
       {/* Profile section */}
       <div className="flex flex-col items-center pt-6 px-4 pb-4">
-        {/* Avatar placeholder */}
-        <div className="w-20 h-20 rounded-full bg-yt-elevated border border-yt-border shrink-0" />
-        <p className="mt-3 text-sm font-medium text-yt-primary font-yt">Your Channel</p>
-        <p className="mt-1 text-xs text-yt-secondary font-yt">@yourchannel</p>
+        {/* Avatar placeholder — gradient circle with initial */}
+        <div
+          className="w-20 h-20 rounded-full shrink-0 flex items-center justify-center"
+          style={{ background: 'linear-gradient(135deg, #4285F4, #34A853)' }}
+        >
+          <span className="text-white font-yt text-2xl font-medium">F</span>
+        </div>
+        <p className="mt-3 text-sm font-medium text-yt-primary font-yt">Felix Peng</p>
+        <p className="mt-1 text-xs text-yt-secondary font-yt">@felixpeng</p>
         <a
           href="#"
           className="mt-2 text-xs text-yt-link font-yt hover:underline"

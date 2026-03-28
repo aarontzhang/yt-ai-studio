@@ -3,6 +3,9 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { useEditorStore } from '@/lib/useEditorStore';
+import { useAuth } from '@/components/auth/AuthProvider';
+import { uploadVideoToSupabase } from '@/lib/uploadVideo';
 
 interface UploadModalProps {
   open: boolean;
@@ -11,31 +14,43 @@ interface UploadModalProps {
 
 export default function UploadModal({ open, onClose }: UploadModalProps) {
   const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgressState] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
+  const { user } = useAuth();
+  const setVideoCloud = useEditorStore(s => s.setVideoCloud);
+  const setUploadProgress = useEditorStore(s => s.setUploadProgress);
 
   const handleFile = useCallback(async (file: File) => {
     if (!file.type.startsWith('video/')) return;
-    onClose();
 
-    // Create a new project and navigate to editor
-    try {
-      const res = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: file.name.replace(/\.[^.]+$/, ''), edit_state: {} }),
-      });
-      if (res.ok) {
-        const { id } = await res.json();
-        router.push(`/editor?project=${id}`);
-      } else {
-        // Fallback: just navigate to editor without project
-        router.push('/editor');
+    if (user) {
+      // Real upload flow — use existing Supabase upload pipeline
+      try {
+        setIsUploading(true);
+        const blobUrl = URL.createObjectURL(file);
+        const { projectId, storagePath } = await uploadVideoToSupabase(
+          file,
+          user.id,
+          (p) => {
+            setUploadProgress(p);
+            setUploadProgressState(Math.round(p));
+          },
+        );
+        setVideoCloud(file, blobUrl, storagePath, projectId);
+        onClose();
+        router.push(`/editor?project=${projectId}`);
+      } catch (err) {
+        console.error('Upload failed:', err);
+        setIsUploading(false);
       }
-    } catch {
+    } else {
+      // No auth — just navigate to editor (demo mode)
+      onClose();
       router.push('/editor');
     }
-  }, [onClose, router]);
+  }, [onClose, router, user, setVideoCloud, setUploadProgress]);
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -50,7 +65,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
   }, [handleFile]);
 
   return (
-    <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v && !isUploading) onClose(); }}>
       <DialogContent
         className="p-0 gap-0 border-yt-border bg-yt-elevated"
         style={{ width: 540, maxWidth: '90vw', borderRadius: 12 }}
@@ -87,53 +102,76 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
           onDragLeave={() => setIsDragging(false)}
           onDrop={handleDrop}
         >
-          {/* Upload icon */}
-          <div
-            className="flex items-center justify-center rounded-full"
-            style={{
-              width: 100,
-              height: 100,
-              background: isDragging ? 'rgba(62, 166, 255, 0.1)' : '#282828',
-              transition: 'background 200ms ease',
-            }}
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40" className="text-yt-secondary">
-              <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
-            </svg>
-          </div>
+          {isUploading ? (
+            <>
+              {/* Upload progress */}
+              <div
+                className="flex items-center justify-center rounded-full"
+                style={{ width: 100, height: 100, background: '#282828' }}
+              >
+                <div
+                  className="animate-spin rounded-full"
+                  style={{ width: 40, height: 40, border: '3px solid #3d3d3d', borderTopColor: '#3ea6ff' }}
+                />
+              </div>
+              <p className="text-yt-primary font-yt" style={{ fontSize: 15, textAlign: 'center' }}>
+                Uploading... {uploadProgress}%
+              </p>
+              <div style={{ width: '100%', maxWidth: 300, height: 4, background: '#3d3d3d', borderRadius: 2, overflow: 'hidden' }}>
+                <div style={{ height: '100%', width: `${uploadProgress}%`, background: '#3ea6ff', borderRadius: 2, transition: 'width 0.3s ease' }} />
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Upload icon */}
+              <div
+                className="flex items-center justify-center rounded-full"
+                style={{
+                  width: 100,
+                  height: 100,
+                  background: isDragging ? 'rgba(62, 166, 255, 0.1)' : '#282828',
+                  transition: 'background 200ms ease',
+                }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="40" height="40" className="text-yt-secondary">
+                  <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z" />
+                </svg>
+              </div>
 
-          <p
-            className="text-yt-primary font-yt"
-            style={{ fontSize: 15, fontWeight: 400, lineHeight: '22px', textAlign: 'center' }}
-          >
-            Drag and drop video files to upload
-          </p>
-          <p
-            className="text-yt-secondary font-yt"
-            style={{ fontSize: 13, lineHeight: '18px', textAlign: 'center' }}
-          >
-            Your videos will be private until you publish them.
-          </p>
+              <p
+                className="text-yt-primary font-yt"
+                style={{ fontSize: 15, fontWeight: 400, lineHeight: '22px', textAlign: 'center' }}
+              >
+                Drag and drop video files to upload
+              </p>
+              <p
+                className="text-yt-secondary font-yt"
+                style={{ fontSize: 13, lineHeight: '18px', textAlign: 'center' }}
+              >
+                Your videos will be private until you publish them.
+              </p>
 
-          {/* Select files button */}
-          <button
-            onClick={() => inputRef.current?.click()}
-            className="font-yt cursor-pointer"
-            style={{
-              background: '#ffffff',
-              color: '#0f0f0f',
-              fontSize: 14,
-              fontWeight: 500,
-              lineHeight: '20px',
-              letterSpacing: '0.2px',
-              padding: '8px 16px',
-              borderRadius: 18,
-              border: 'none',
-              marginTop: 8,
-            }}
-          >
-            Select files
-          </button>
+              {/* Select files button */}
+              <button
+                onClick={() => inputRef.current?.click()}
+                className="font-yt cursor-pointer"
+                style={{
+                  background: '#ffffff',
+                  color: '#0f0f0f',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  lineHeight: '20px',
+                  letterSpacing: '0.2px',
+                  padding: '8px 16px',
+                  borderRadius: 18,
+                  border: 'none',
+                  marginTop: 8,
+                }}
+              >
+                Select files
+              </button>
+            </>
+          )}
 
           <input
             ref={inputRef}
@@ -145,26 +183,28 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
         </div>
 
         {/* Footer — terms */}
-        <div
-          className="border-t border-yt-border"
-          style={{ padding: '16px 24px' }}
-        >
-          <p
-            className="text-yt-muted font-yt text-center"
-            style={{ fontSize: 12, lineHeight: '16px', margin: 0 }}
+        {!isUploading && (
+          <div
+            className="border-t border-yt-border"
+            style={{ padding: '16px 24px' }}
           >
-            By submitting your videos to YouTube, you acknowledge that you agree to YouTube&apos;s{' '}
-            <span className="text-yt-link cursor-pointer">Terms of Service</span> and{' '}
-            <span className="text-yt-link cursor-pointer">Community Guidelines</span>.
-          </p>
-          <p
-            className="text-yt-muted font-yt text-center"
-            style={{ fontSize: 12, lineHeight: '16px', margin: '4px 0 0' }}
-          >
-            Please be sure not to violate others&apos; copyright or privacy rights.{' '}
-            <span className="text-yt-link cursor-pointer">Learn more</span>
-          </p>
-        </div>
+            <p
+              className="text-yt-muted font-yt text-center"
+              style={{ fontSize: 12, lineHeight: '16px', margin: 0 }}
+            >
+              By submitting your videos to YouTube, you acknowledge that you agree to YouTube&apos;s{' '}
+              <span className="text-yt-link cursor-pointer">Terms of Service</span> and{' '}
+              <span className="text-yt-link cursor-pointer">Community Guidelines</span>.
+            </p>
+            <p
+              className="text-yt-muted font-yt text-center"
+              style={{ fontSize: 12, lineHeight: '16px', margin: '4px 0 0' }}
+            >
+              Please be sure not to violate others&apos; copyright or privacy rights.{' '}
+              <span className="text-yt-link cursor-pointer">Learn more</span>
+            </p>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

@@ -1,16 +1,16 @@
 [
   {
-    "id": "fbae00e3",
-    "label": "next-dev",
-    "command": "cd /Users/felixpeng/Downloads/repos/yt-ai-studio-v2 && npx next dev --webpack -p 3000",
+    "id": "e12ec643",
+    "label": "next-dev-3002",
+    "command": "cd /Users/felixpeng/Downloads/repos/yt-ai-studio-v2 && npx next dev --webpack -p 3002",
     "cwd": "/Users/felixpeng/Downloads/repos/yt-ai-studio-v2",
     "ownerSessionFile": "/Users/felixpeng/.gsd/sessions/--Users-felixpeng-Downloads-repos-yt-ai-studio-v2--/2026-03-28T08-28-48-346Z_fdb6f0e7-c5fa-4e6f-97b9-231e46d9798b.jsonl",
     "persistAcrossSessions": false,
-    "startedAt": 1774687380472,
+    "startedAt": 1774689634005,
     "processType": "server",
     "group": null,
     "readyPattern": null,
-    "readyPort": 3000,
-    "pid": 62488
+    "readyPort": 3002,
+    "pid": 84784
   }
 ]
