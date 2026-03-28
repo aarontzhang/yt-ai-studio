@@ -18,10 +18,10 @@
   --surface-gradient: linear-gradient(180deg, rgba(32, 32, 32, 0.96) 0%, rgba(18, 18, 18, 0.98) 100%);
   --logo-tile: linear-gradient(180deg, #ffffff 0%, #f1f4fb 100%);
 
-  --blue-clip:    #FF3333;
-  --blue-clip-hi: #FF8888;
-  --audio-clip:   #FF4444;
-  --audio-clip-hi:#FF9999;
+  --blue-clip:    #3B82F6;
+  --blue-clip-hi: #93C5FD;
+  --audio-clip:   #2563EB;
+  --audio-clip-hi:#BFDBFE;
 
   /* Caption / text overlay / speed track colors */
   --caption-clip: #F59E0B;

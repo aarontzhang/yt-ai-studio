@@ -17,9 +17,9 @@ interface ClipBlockProps {
 }
 
 const CLIP_COLOR = {
-  bg: 'rgba(255,51,51,0.35)',
-  border: 'rgba(255,136,136,0.6)',
-  hi: 'rgba(255,136,136,0.9)',
+  bg: 'rgba(59,130,246,0.35)',
+  border: 'rgba(147,197,253,0.6)',
+  hi: 'rgba(147,197,253,0.9)',
 };
 
 export default function ClipBlock({
@@ -45,14 +45,14 @@ export default function ClipBlock({
         height,
         background: color.bg,
         borderRadius: 4,
-        border: `1.5px solid ${isSelected ? 'var(--accent)' : isTagged ? 'rgba(255,100,100,0.9)' : color.border}`,
+        border: `1.5px solid ${isSelected ? 'var(--accent)' : isTagged ? 'rgba(147,197,253,0.9)' : color.border}`,
         outline: isSelected ? '1.5px solid rgba(255,255,255,0.2)' : undefined,
         outlineOffset: isSelected ? '1px' : undefined,
         boxSizing: 'border-box',
         overflow: 'hidden',
         cursor: 'pointer',
         userSelect: 'none',
-        boxShadow: isTagged ? '0 0 0 1px rgba(255,100,100,0.3)' : 'none',
+        boxShadow: isTagged ? '0 0 0 1px rgba(147,197,253,0.3)' : 'none',
       }}
       onClick={onSelect}
     >

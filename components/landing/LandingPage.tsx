@@ -91,8 +91,8 @@ function AppWindow({
 
 function HeroEditorMock() {
   const tracks: HeroTrack[] = [
-    { label: 'video', segs: [{ w: '28%' }, { w: '38%', ml: '30%' }, { w: '24%', ml: '72%' }], color: 'linear-gradient(90deg,#FF3333,#FF8888)' },
-    { label: 'audio', segs: [{ w: '96%' }], color: 'linear-gradient(90deg,#FF4444,#FF9999)', opacity: 0.7 },
+    { label: 'video', segs: [{ w: '28%' }, { w: '38%', ml: '30%' }, { w: '24%', ml: '72%' }], color: 'linear-gradient(90deg,#3B82F6,#93C5FD)' },
+    { label: 'audio', segs: [{ w: '96%' }], color: 'linear-gradient(90deg,#2563EB,#BFDBFE)', opacity: 0.7 },
     { label: 'text', segs: [{ w: '16%', ml: '4%' }], color: 'linear-gradient(90deg,#7c3aed,#a78bfa)' },
   ];
 
@@ -413,12 +413,12 @@ function TimelineMock() {
     {
       label: 'video',
       segs: [{ l: '0%', w: '28%' }, { l: '30%', w: '38%' }, { l: '72%', w: '24%' }],
-      color: 'linear-gradient(90deg,#FF3333,#FF8888)',
+      color: 'linear-gradient(90deg,#3B82F6,#93C5FD)',
     },
     {
       label: 'audio',
       segs: [{ l: '0%', w: '97%' }],
-      color: 'linear-gradient(90deg,#FF4444,#FF9999)',
+      color: 'linear-gradient(90deg,#2563EB,#BFDBFE)',
       opacity: 0.7,
     },
     {

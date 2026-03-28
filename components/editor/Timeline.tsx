@@ -861,8 +861,8 @@ export default function Timeline({
                       top: 3,
                       height: EFFECT_TRACK_H - 6,
                       borderRadius: 3,
-                      background: 'rgba(255,136,136,0.28)',
-                      border: '1px solid rgba(255,136,136,0.5)',
+                      background: 'rgba(59,130,246,0.28)',
+                      border: '1px solid rgba(147,197,253,0.5)',
                       display: 'flex',
                       alignItems: 'center',
                       padding: '0 5px',
@@ -1254,10 +1254,10 @@ const TimelinePlayheadOverlay = memo(function TimelinePlayheadOverlay({
           width: 14,
           height: 14,
           borderRadius: '50%',
-          background: 'var(--accent)',
+          background: '#3B82F6',
           cursor: 'ew-resize',
           zIndex: 16,
-          boxShadow: '0 0 0 3px rgba(255,0,0,0.12)',
+          boxShadow: '0 0 0 3px rgba(59,130,246,0.25)',
           pointerEvents: 'none',
         }}
       />
