@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /* Autocut — dark neutral base with iridescent accents */
 :root {
@@ -38,6 +39,62 @@
 
   --playhead:    #ffffff;
   --selection:   rgba(33, 212, 255, 0.24);
+
+  /* ── YouTube Studio tokens (additive — Autocut tokens above are untouched) ── */
+
+  /* Backgrounds */
+  --yt-bg-base:         #0f0f0f;
+  --yt-bg-surface:      #181818;
+  --yt-bg-elevated:     #212121;
+  --yt-bg-overlay:      #282828;
+  --yt-bg-hover:        #3d3d3d;
+  --yt-bg-scrim:        rgba(0, 0, 0, 0.6);
+
+  /* Text */
+  --yt-text-primary:    #ffffff;
+  --yt-text-secondary:  #aaaaaa;
+  --yt-text-muted:      #717171;
+  --yt-text-link:       #3ea6ff;
+
+  /* Accent / Brand */
+  --yt-red:             #ff0000;
+  --yt-blue:            #3ea6ff;
+  --yt-blue-button:     #3ea6ff;
+  --yt-blue-hover:      #65b8ff;
+  --yt-white-button:    #ffffff;
+
+  /* Borders */
+  --yt-border:          #3d3d3d;
+  --yt-border-subtle:   #2d2d2d;
+  --yt-border-input:    #616161;
+  --yt-border-focus:    #3ea6ff;
+
+  /* Status */
+  --yt-success:         #2ba640;
+  --yt-warning:         #f9a825;
+  --yt-error:           #ff4e45;
+
+  /* Spacing (reference values — use Tailwind built-in scale for utility classes) */
+  --yt-space-xs:        4px;
+  --yt-space-sm:        8px;
+  --yt-space-md:        12px;
+  --yt-space-base:      16px;
+  --yt-space-lg:        24px;
+  --yt-space-xl:        32px;
+  --yt-space-2xl:       48px;
+
+  /* Border radius */
+  --yt-radius-button:   18px;
+  --yt-radius-input:    4px;
+  --yt-radius-card:     12px;
+  --yt-radius-modal:    12px;
+  --yt-radius-chip:     16px;
+  --yt-radius-dropdown: 8px;
+  --yt-radius-thumbnail:4px;
+
+  /* Layout dimensions */
+  --yt-topbar-height:   56px;
+  --yt-sidebar-width:   240px;
 }
 
 @theme inline {
@@ -45,6 +102,40 @@
   --color-foreground: var(--fg-primary);
   --font-sans: var(--font-serif);
   --font-mono: var(--font-mono);
+
+  /* YouTube Studio colors */
+  --color-yt-base:          var(--yt-bg-base);
+  --color-yt-surface:       var(--yt-bg-surface);
+  --color-yt-elevated:      var(--yt-bg-elevated);
+  --color-yt-overlay:       var(--yt-bg-overlay);
+  --color-yt-hover:         var(--yt-bg-hover);
+
+  --color-yt-primary:       var(--yt-text-primary);
+  --color-yt-secondary:     var(--yt-text-secondary);
+  --color-yt-muted:         var(--yt-text-muted);
+  --color-yt-link:          var(--yt-text-link);
+
+  --color-yt-blue:          var(--yt-blue);
+  --color-yt-blue-hover:    var(--yt-blue-hover);
+  --color-yt-red:           var(--yt-red);
+  --color-yt-success:       var(--yt-success);
+  --color-yt-warning:       var(--yt-warning);
+  --color-yt-error:         var(--yt-error);
+
+  --color-yt-border:        var(--yt-border);
+  --color-yt-border-subtle: var(--yt-border-subtle);
+  --color-yt-border-input:  var(--yt-border-input);
+
+  /* Border radius */
+  --radius-yt-button:       var(--yt-radius-button);
+  --radius-yt-input:        var(--yt-radius-input);
+  --radius-yt-card:         var(--yt-radius-card);
+  --radius-yt-modal:        var(--yt-radius-modal);
+  --radius-yt-chip:         var(--yt-radius-chip);
+  --radius-yt-dropdown:     var(--yt-radius-dropdown);
+
+  /* Font — Roboto for YouTube Studio components */
+  --font-yt: var(--font-roboto), 'YouTube Noto', Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -252,4 +343,12 @@ a { color: inherit; }
     0 8px 18px rgba(33, 212, 255, 0.2),
     inset 0 1px 0 rgba(255,255,255,0.35);
   color: var(--accent-ink);
+}
+
+/* Accessibility: respect user motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
