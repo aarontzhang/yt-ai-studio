@@ -1207,8 +1207,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
                     bottom: Math.max(18, videoDisplaySize.height * 0.065),
                     left: '50%',
                     transform: 'translateX(-50%)',
-                    width: '100%',
-                    padding: `0 ${Math.max(16, videoDisplaySize.width * 0.06)}px`,
+                    width: videoDisplaySize.width,
+                    maxWidth: '100%',
+                    padding: `0 ${Math.max(20, videoDisplaySize.width * 0.07)}px`,
                     boxSizing: 'border-box',
                   }}
                 >
@@ -1223,8 +1224,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
                       textShadow: '0 2px 8px rgba(0,0,0,0.45)',
                       WebkitTextStroke: `${captionStrokeWidth}px #000`,
                       paintOrder: 'stroke fill',
-                      whiteSpace: 'pre',
-                      overflowWrap: 'normal',
+                      whiteSpace: 'pre-wrap',
+                      overflowWrap: 'break-word',
+                      wordBreak: 'break-word',
                       boxSizing: 'border-box',
                     }}
                   >
