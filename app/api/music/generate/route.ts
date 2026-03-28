@@ -8,7 +8,7 @@ import { generateMusicCue } from '@/lib/server/lyriaClient';
 import type { CaptionEntry, MusicCue, SourceSegment, SegmentVibeClassification, SceneBoundary } from '@/lib/types';
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const GEMINI_MODEL = 'gemini-1.5-flash';
+const GEMINI_MODEL = 'gemini-2.5-flash-preview-04-17';
 const MAX_SEGMENTS = 3;
 
 const GEMINI_SYSTEM_PROMPT = `You are a music supervisor analyzing video transcript segments to select background music. For each segment, classify the emotional mood, energy level, and suggest music genre hints based on the content and pacing.
