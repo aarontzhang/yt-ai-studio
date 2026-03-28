@@ -112,6 +112,7 @@ export default function Timeline({
   const liveTransitions = useEditorStore(s => s.transitions);
   const liveMarkers = useEditorStore(s => s.markers);
   const liveTextOverlays = useEditorStore(s => s.textOverlays);
+  const liveMusicClips = useEditorStore(s => s.musicClips);
   const selectedItem = useEditorStore(s => s.selectedItem);
   const setSelectedItem = useEditorStore(s => s.setSelectedItem);
   const splitClipAtTime = useEditorStore(s => s.splitClipAtTime);
@@ -136,6 +137,7 @@ export default function Timeline({
   const transitions = timelineSnapshot?.transitions ?? liveTransitions;
   const markers = timelineSnapshot?.markers ?? liveMarkers;
   const textOverlays = timelineSnapshot?.textOverlays ?? liveTextOverlays;
+  const musicClips = timelineSnapshot?.musicClips ?? liveMusicClips;
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -227,6 +229,7 @@ export default function Timeline({
   const hasTransitions = transitions.length > 0 || reviewOverlays.some((overlay) => overlay.kind === 'transition');
   const cutReviewOverlays = reviewOverlays.filter((overlay) => overlay.kind === 'cut');
   const hasTextOverlays = textOverlays.length > 0 || reviewOverlays.some((overlay) => overlay.kind === 'text');
+  const hasMusicClips = musicClips.length > 0;
 
   const waveform = useMemo(() => {
     if (videoDuration <= 0) return [];
@@ -548,6 +551,7 @@ export default function Timeline({
           <div style={{ height: RULER_H, borderBottom: '1px solid var(--border)' }} />
           <TrackHeader icon={<VideoIcon />} label="V1" height={TRACK_HEIGHT} color="var(--blue-clip-hi)" />
           <TrackHeader icon={<AudioIcon />} label="A1" height={TRACK_HEIGHT} color="var(--blue-clip-hi)" />
+          {hasMusicClips && <EffectHeader label="BGM" color="rgba(167,243,208,0.8)" />}
           {hasCaptions && <EffectHeader label="CC" color="var(--caption-clip)" />}
           {hasTextOverlays && <EffectHeader label="Text" color="var(--text-clip)" />}
           {hasTransitions && <EffectHeader label="Trans." color="rgba(255,255,255,0.5)" />}
@@ -839,6 +843,49 @@ export default function Timeline({
               );
             })}
           </TrackRow>
+
+          {hasMusicClips && (
+            <EffectTrackRow height={EFFECT_TRACK_H}>
+              {musicClips.map((clip) => {
+                const left = px(clip.timelineStart);
+                const width = Math.max(4, px(clip.timelineStart + clip.duration) - left);
+                return (
+                  <div
+                    key={clip.id}
+                    title={`BGM • ${formatTime(clip.timelineStart)} – ${formatTime(clip.timelineStart + clip.duration)}`}
+                    onClick={(e) => { e.stopPropagation(); requestDisplaySeek(clip.timelineStart); }}
+                    style={{
+                      position: 'absolute',
+                      left,
+                      width,
+                      top: 3,
+                      height: EFFECT_TRACK_H - 6,
+                      borderRadius: 3,
+                      background: 'rgba(52,211,153,0.28)',
+                      border: '1px solid rgba(52,211,153,0.5)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      padding: '0 5px',
+                      overflow: 'hidden',
+                      boxSizing: 'border-box',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <span style={{
+                      fontSize: 9,
+                      color: 'rgba(255,255,255,0.85)',
+                      fontWeight: 500,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}>
+                      BGM
+                    </span>
+                  </div>
+                );
+              })}
+            </EffectTrackRow>
+          )}
 
           {hasCaptions && (
             <EffectTrackRow height={EFFECT_TRACK_H}>
