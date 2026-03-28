@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/AuthProvider';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
-import AutocutMark from '@/components/branding/AutocutMark';
+import YouTubeAIStudioMark from '@/components/branding/YouTubeAIStudioMark';
 export default function LoginPage() {
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
   const [email, setEmail] = useState('');
@@ -124,9 +124,9 @@ export default function LoginPage() {
 
         {/* Logo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <AutocutMark size={32} withTile />
+          <YouTubeAIStudioMark size={32} />
           <span style={{ fontSize: 18, fontWeight: 700, letterSpacing: '-0.025em', color: 'rgba(255,255,255,0.92)' }}>
-            Autocut
+            YouTube AI Studio
           </span>
         </div>
 
@@ -150,13 +150,13 @@ export default function LoginPage() {
             margin: 0,
             maxWidth: 400,
           }}>
-            Tell Autocut what to cut. It finds the moments and applies every edit directly to your timeline.
+            AI-powered video editing, natively integrated into your upload workflow.
           </p>
         </div>
 
         {/* Bottom quote */}
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.18)', margin: 0 }}>
-          © 2025 Autocut
+          © 2025 YouTube AI Studio
         </p>
       </div>
 
@@ -196,7 +196,7 @@ export default function LoginPage() {
             color: 'rgba(255,255,255,0.35)',
             margin: '0 0 28px',
           }}>
-            {mode === 'signin' ? 'Sign in to continue editing.' : 'Create an account to get started.'}
+            {mode === 'signin' ? 'Sign in to continue.' : 'Create an account to get started.'}
           </p>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>

@@ -38,7 +38,7 @@ import {
   RequestChainTranscriptAvailability,
   serializeActionForComparison,
 } from '@/lib/requestChain';
-import AutocutMark from '@/components/branding/AutocutMark';
+import YouTubeAIStudioMark from '@/components/branding/YouTubeAIStudioMark';
 const REVIEW_PREROLL_SECONDS = 2.5;
 
 type ChatResponse = {
@@ -1525,9 +1525,8 @@ function AutoAvatar({ size = 28 }: { size?: number }) {
       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
       flexShrink: 0,
     }}>
-      <AutocutMark
+      <YouTubeAIStudioMark
         size={Math.max(16, Math.round(size * 0.78))}
-        withTile={false}
       />
     </div>
   );
@@ -1585,30 +1584,29 @@ function formatMusicTime(seconds: number): string {
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
+const MUSIC_STAGE_LABELS: Record<string, string> = {
+  segmentation: 'Analyzing your video…',
+  merging: 'Arranging segments…',
+  cue_generation: 'Generating music tracks…',
+};
+
 function MusicGeneratingCard({ progress }: { progress: { stage: string; completed: number; total: number } | null }) {
+  const stageLabel = progress
+    ? (MUSIC_STAGE_LABELS[progress.stage] ?? 'Working on it…')
+    : 'Generating background music…';
   return (
-    <div style={{
-      padding: '10px 12px',
-      borderRadius: 8,
-      border: '1px solid rgba(255,255,255,0.08)',
-      background: 'rgba(255,255,255,0.03)',
-    }}>
+    <div style={{ padding: '10px 12px' }}>
       <div style={{ fontSize: 12, color: 'var(--fg-secondary)', marginBottom: progress ? 8 : 0, fontFamily: 'var(--font-serif)' }}>
-        {progress ? progress.stage.replace(/_/g, ' ') : 'Generating background music…'}
+        {stageLabel}
       </div>
       {progress && (
-        <>
-          <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 4 }}>
-            <div style={{
-              height: '100%', borderRadius: 2, background: 'var(--accent)',
-              width: `${Math.round((progress.completed / Math.max(1, progress.total)) * 100)}%`,
-              transition: 'width 0.3s ease',
-            }} />
-          </div>
-          <div style={{ fontSize: 10, color: 'var(--fg-muted)', fontFamily: 'var(--font-serif)' }}>
-            {progress.completed} / {progress.total}
-          </div>
-        </>
+        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', borderRadius: 2, background: 'var(--accent)',
+            width: `${Math.round((progress.completed / Math.max(1, progress.total)) * 100)}%`,
+            transition: 'width 0.3s ease',
+          }} />
+        </div>
       )}
     </div>
   );
@@ -1618,12 +1616,10 @@ function MusicCueCard({
   cue,
   onAccept,
   onReject,
-  onVolumeChange,
 }: {
   cue: MusicCue;
   onAccept: (cue: MusicCue) => void;
   onReject: (id: string) => void;
-  onVolumeChange: (id: string, volumeDb: number) => void;
 }) {
   const color = MUSIC_MOOD_COLORS[cue.mood] ?? '#9ca3af';
   const isSuggested = cue.status === 'suggested';
@@ -1650,29 +1646,20 @@ function MusicCueCard({
       )}
       {isSuggested && (
         <div style={{ display: 'flex', gap: 6 }}>
-          <button type="button" onClick={() => onAccept(cue)} style={{ flex: 1, border: '1px solid var(--accent)', borderRadius: 6, background: 'rgba(59,130,246,0.1)', color: 'var(--accent)', fontSize: 11, padding: '4px 8px', cursor: 'pointer' }}>
-            Accept
+          <button type="button" onClick={() => onAccept(cue)} style={{ flex: 1, border: '1px solid var(--accent)', borderRadius: 6, background: 'rgba(33,212,255,0.08)', color: 'var(--accent)', fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+            Add to timeline
           </button>
-          <button type="button" onClick={() => onReject(cue.id)} style={{ flex: 1, border: '1px solid var(--border-mid)', borderRadius: 6, background: 'rgba(255,255,255,0.04)', color: 'var(--fg-secondary)', fontSize: 11, padding: '4px 8px', cursor: 'pointer' }}>
-            Reject
+          <button type="button" onClick={() => onReject(cue.id)} style={{ flex: 1, border: '1px solid var(--border-mid)', borderRadius: 6, background: 'rgba(255,255,255,0.04)', color: 'var(--fg-secondary)', fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+            Dismiss
           </button>
         </div>
       )}
       {isAccepted && (
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-            <span style={{ fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-serif)' }}>✓ Accepted</span>
-            <button type="button" onClick={() => onReject(cue.id)} style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px' }}>
-              Remove
-            </button>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <label style={{ fontSize: 10, color: 'var(--fg-muted)', whiteSpace: 'nowrap' }}>Volume</label>
-            <input type="range" min={-30} max={0} step={1} value={cue.volumeDb}
-              onChange={(e) => onVolumeChange(cue.id, Number(e.target.value))}
-              style={{ flex: 1, height: 2 }} />
-            <span style={{ fontSize: 10, color: 'var(--fg-muted)', minWidth: 32, textAlign: 'right' }}>{cue.volumeDb}dB</span>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <span style={{ fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-serif)' }}>✓ Accepted</span>
+          <button type="button" onClick={() => onReject(cue.id)} style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', fontFamily: 'var(--font-serif)' }}>
+            Remove
+          </button>
         </div>
       )}
       {cue.status === 'failed' && (
@@ -1687,11 +1674,9 @@ function MusicCuesBlock({ musicCues, musicGenerationStatus }: { musicCues?: Musi
   const musicClips = useEditorStore(s => s.musicClips);
   const acceptMusicCue = useEditorStore(s => s.acceptMusicCue);
   const rejectMusicCue = useEditorStore(s => s.rejectMusicCue);
-  const updateMusicCue = useEditorStore(s => s.updateMusicCue);
   const importSources = useEditorStore(s => s.importSources);
   const addMusicClip = useEditorStore(s => s.addMusicClip);
   const deleteMusicClip = useEditorStore(s => s.deleteMusicClip);
-  const setMusicClipVolume = useEditorStore(s => s.setMusicClipVolume);
 
   const activateCue = useCallback(async (cue: MusicCue) => {
     if (!cue.storagePath) return;
@@ -1723,33 +1708,54 @@ function MusicCuesBlock({ musicCues, musicGenerationStatus }: { musicCues?: Musi
     updateMusicCueStatus(supabase, cueId, { status: 'rejected' }).catch(console.error);
   }, [rejectMusicCue, getClipIdForCue, deleteMusicClip]);
 
-  const handleCueVolumeChange = useCallback((cueId: string, volumeDb: number) => {
-    updateMusicCue(cueId, { volumeDb });
-    const clipId = getClipIdForCue(cueId);
-    if (clipId) setMusicClipVolume(clipId, dbToLinear(volumeDb));
-    const supabase = getSupabaseBrowser();
-    updateMusicCueStatus(supabase, cueId, { volume_db: volumeDb }).catch(console.error);
-  }, [updateMusicCue, getClipIdForCue, setMusicClipVolume]);
-
   const isGenerating = musicGenerationStatus === 'generating';
   const hasCues = musicCues && musicCues.length > 0;
   if (!isGenerating && !hasCues) return null;
 
+  const cueCount = musicCues?.length ?? 0;
+  const headerSummary = hasCues
+    ? `${cueCount} track${cueCount !== 1 ? 's' : ''} ready`
+    : null;
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, width: '100%' }}>
-      {isGenerating && <MusicGeneratingCard progress={musicGeneration.progress} />}
-      {hasCues && musicCues!.map(staticCue => {
-        const liveCue = musicGeneration.cues.find(c => c.id === staticCue.id) ?? staticCue;
-        return (
-          <MusicCueCard
-            key={staticCue.id}
-            cue={liveCue}
-            onAccept={handleCueAccept}
-            onReject={handleCueReject}
-            onVolumeChange={handleCueVolumeChange}
-          />
-        );
-      })}
+    <div style={{
+      marginTop: 10,
+      border: '1px solid rgba(255,255,255,0.08)',
+      borderRadius: 7,
+      overflow: 'hidden',
+      background: 'var(--bg-elevated)',
+      width: '100%',
+    }}>
+      <div style={{
+        padding: '7px 12px',
+        background: 'rgba(255,255,255,0.03)',
+        borderBottom: '1px solid rgba(255,255,255,0.06)',
+        display: 'flex', alignItems: 'center', gap: 8,
+      }}>
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3b82f6', flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: 'var(--fg-primary)', fontWeight: 600, fontFamily: 'var(--font-serif)' }}>
+          Generate background music
+        </span>
+        {headerSummary && (
+          <span style={{ fontSize: 11, color: 'var(--fg-muted)', fontFamily: 'var(--font-serif)' }}>
+            - {headerSummary}
+          </span>
+        )}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 12px' }}>
+        {isGenerating && <MusicGeneratingCard progress={musicGeneration.progress} />}
+        {hasCues && musicCues!.map(staticCue => {
+          const liveCue = musicGeneration.cues.find(c => c.id === staticCue.id) ?? staticCue;
+          return (
+            <MusicCueCard
+              key={staticCue.id}
+              cue={liveCue}
+              onAccept={handleCueAccept}
+              onReject={handleCueReject}
+            />
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -3567,7 +3573,7 @@ export default function ChatSidebar() {
                 reviewLocked
                   ? 'Finish the active review…'
                   : isChatLoading
-                    ? 'Autocut is working…'
+                    ? 'YouTube AI Studio is working…'
                     : mediaPreparationBlockingSend
                       ? 'Media is loading. You can type…'
                     : 'Ask about the video or review cuts…'

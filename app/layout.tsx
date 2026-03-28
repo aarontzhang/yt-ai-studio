@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Autocut",
+  title: "YouTube AI Studio",
   description: "AI-powered video editor. Cut, caption, and edit via chat.",
   icons: {
     icon: "/favicon.svg",
