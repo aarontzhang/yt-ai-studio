@@ -37,18 +37,18 @@ export default function YTTopBar({ onUploadClick }: YTTopBarProps) {
         </button>
 
         {/* Logo: links to /content */}
-        <Link href="/content" className="flex items-center gap-1.5" aria-label="YouTube Studio home">
-          {/* YouTube play button logo mark — red rectangle with white triangle */}
+        <Link href="/content" className="flex items-center gap-1.5" aria-label="YouTube AI Studio home">
+          {/* YouTube AI Studio icon — red rectangle with Gemini sparkle */}
           <svg
             width="28"
-            height="20"
-            viewBox="0 0 28 20"
+            height="22"
+            viewBox="0 0 130 100"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
             aria-hidden="true"
           >
-            <rect width="28" height="20" rx="4" fill="#FF0000" />
-            <path d="M11 5.5L20 10L11 14.5V5.5Z" fill="white" />
+            <rect x="5" y="8" width="120" height="84" rx="20" fill="#FF0000" />
+            <path d="M 65,26 C 65,39 52,50 41,50 C 52,50 65,61 65,74 C 65,61 78,50 89,50 C 78,50 65,39 65,26 Z" fill="white" />
           </svg>
           <span className="text-yt-primary font-yt font-medium text-sm leading-none tracking-[-0.01em]">
             Studio

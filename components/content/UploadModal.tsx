@@ -16,6 +16,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgressState] = useState(0);
+  const [uploadError, setUploadError] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
   const { user } = useAuth();
@@ -29,10 +30,10 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
       // Real upload flow — use existing Supabase upload pipeline
       try {
         setIsUploading(true);
+        setUploadError('');
         const blobUrl = URL.createObjectURL(file);
         const { projectId, storagePath } = await uploadVideoToSupabase(
           file,
-          user.id,
           (p) => {
             setUploadProgress(p);
             setUploadProgressState(Math.round(p));
@@ -43,6 +44,7 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
         router.push(`/editor?project=${projectId}`);
       } catch (err) {
         console.error('Upload failed:', err);
+        setUploadError(err instanceof Error ? err.message : 'Upload failed. Please sign in and try again.');
         setIsUploading(false);
       }
     } else {
@@ -123,6 +125,11 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
             </>
           ) : (
             <>
+              {uploadError && (
+                <div className="w-full max-w-sm bg-[#ff4e45]/10 border border-[#ff4e45]/30 rounded-lg" style={{ padding: '10px 16px', marginBottom: 8 }}>
+                  <p className="text-[#ff4e45] font-yt text-center" style={{ fontSize: 13, margin: 0 }}>{uploadError}</p>
+                </div>
+              )}
               {/* Upload icon */}
               <div
                 className="flex items-center justify-center rounded-full"
