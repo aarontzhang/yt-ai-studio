@@ -50,7 +50,7 @@ Plans:
 
 Plans:
 - [x] 02-01-PLAN.md — Shell wiring + ChannelContentPage with tabs and VideoTable (CONT-01, 02, 03, 04, 05)
-- [ ] 02-02-PLAN.md — YTUploadModal with drag-drop upload flow and ToS text (UPLD-01, 02, 03, CONT-05)
+- [x] 02-02-PLAN.md — YTUploadModal with drag-drop upload flow and ToS text (UPLD-01, 02, 03, CONT-05)
 
 ### Phase 3: Editor and Stepper
 **Goal**: The editor looks like YouTube Studio and the full demo flow runs end-to-end — from upload through AI editing, export, the 4-step post-export stepper, and the published dialog
