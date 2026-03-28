@@ -2651,7 +2651,6 @@ export default function ChatSidebar() {
   const musicGeneration = useEditorStore(s => s.musicGeneration);
   const setMusicGeneration = useEditorStore(s => s.setMusicGeneration);
   const musicPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const musicPreloadFiredRef = useRef(false);
   const mainTimelineDuration = useMemo(() => getTimelineDuration(clips), [clips]);
   const availableSources = useMemo(() => (
     resolveProjectSources({
@@ -2699,31 +2698,6 @@ export default function ChatSidebar() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProjectId]);
-
-  // Reset preload flag when project changes
-  useEffect(() => {
-    musicPreloadFiredRef.current = false;
-  }, [currentProjectId]);
-
-  // Silently enqueue a music generation job as soon as indexing is ready so
-  // results are pre-baked by the time the user asks for background music.
-  useEffect(() => {
-    if (!initialIndexingReady) return;
-    const primarySource = sources.find(s => s.isPrimary);
-    if (!primarySource?.assetId || !currentProjectId) return;
-    if (musicGeneration.status !== 'idle') return;
-    if (musicPreloadFiredRef.current) return;
-
-    musicPreloadFiredRef.current = true;
-    void (async () => {
-      try {
-        const supabase = getSupabaseBrowser();
-        await ensureMusicGenerationJob(supabase, currentProjectId, primarySource.assetId!);
-      } catch (err) {
-        console.warn('[music preload] Failed to enqueue background music job:', err);
-      }
-    })();
-  }, [initialIndexingReady, sources, currentProjectId, musicGeneration.status]);
 
   useEffect(() => {
     if (transcriptStatus === 'loading' && (transcriptProgress === null || transcriptProgress.completed === 0)) {
