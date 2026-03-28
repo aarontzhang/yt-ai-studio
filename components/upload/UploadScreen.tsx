@@ -6,7 +6,7 @@ import { useEditorStore } from '@/lib/useEditorStore';
 import { useAuth } from '@/components/auth/AuthProvider';
 import UserProfileMenu from '@/components/auth/UserProfileMenu';
 import { uploadVideoToSupabase } from '@/lib/uploadVideo';
-import AutocutMark from '@/components/branding/AutocutMark';
+import YouTubeAIStudioMark from '@/components/branding/YouTubeAIStudioMark';
 import StorageQuotaBanner from '@/components/storage/StorageQuotaBanner';
 import { useStorageQuota } from '@/lib/useStorageQuota';
 import {
@@ -123,9 +123,9 @@ export default function UploadScreen() {
 
       {/* Logo */}
       <div className="flex items-center gap-2.5 mb-12">
-        <AutocutMark size={32} />
+        <YouTubeAIStudioMark size={32} />
         <span style={{ fontSize: 18, fontWeight: 600, color: 'var(--fg-primary)', letterSpacing: '-0.02em' }}>
-          Autocut
+          YouTube AI Studio
         </span>
       </div>
 

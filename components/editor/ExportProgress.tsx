@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 import { cancelActiveFFmpegJob } from '@/lib/ffmpegClient';
 import { useEditorStore } from '@/lib/useEditorStore';
@@ -8,6 +9,7 @@ import { useEditorStore } from '@/lib/useEditorStore';
 export default function ExportProgress() {
   const ffmpegJob = useEditorStore(s => s.ffmpegJob);
   const setFFmpegJob = useEditorStore(s => s.setFFmpegJob);
+  const router = useRouter();
 
   const handleCancel = useCallback(() => {
     const currentJob = useEditorStore.getState().ffmpegJob;
@@ -154,7 +156,7 @@ export default function ExportProgress() {
 
           {isDone && (
             <p style={{ fontSize: 13, color: 'var(--fg-secondary)', lineHeight: 1.5 }}>
-              Your video is ready to download.
+              Your video is ready. Continue to add details and publish.
             </p>
           )}
         </div>
@@ -196,25 +198,44 @@ export default function ExportProgress() {
               </button>
             )}
             {isDone && (
-              <a
-                href={(ffmpegJob as { status: 'done'; outputUrl: string }).outputUrl}
-                download="export-output.mp4"
-                style={{
-                  padding: '7px 16px', fontSize: 13, fontWeight: 500,
-                  background: 'rgba(255,255,255,0.08)',
-                  border: '1px solid rgba(255,255,255,0.15)',
-                  color: 'var(--fg-primary)',
-                  borderRadius: 6, textDecoration: 'none',
-                  display: 'flex', alignItems: 'center', gap: 6,
-                }}
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-                  <polyline points="7 10 12 15 17 10"/>
-                  <line x1="12" y1="15" x2="12" y2="3"/>
-                </svg>
-                Download
-              </a>
+              <>
+                <a
+                  href={(ffmpegJob as { status: 'done'; outputUrl: string }).outputUrl}
+                  download="export-output.mp4"
+                  style={{
+                    padding: '7px 16px', fontSize: 13, fontWeight: 500,
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    color: 'var(--fg-primary)',
+                    borderRadius: 6, textDecoration: 'none',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                    <polyline points="7 10 12 15 17 10"/>
+                    <line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  Download
+                </a>
+                <button
+                  onClick={() => {
+                    setFFmpegJob({ status: 'idle' });
+                    router.push('/content?stepper=open');
+                  }}
+                  style={{
+                    padding: '7px 16px', fontSize: 13, fontWeight: 500,
+                    background: '#3ea6ff', border: 'none', color: '#0f0f0f',
+                    borderRadius: 18, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                  }}
+                >
+                  Next
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </>
             )}
           </div>
         )}

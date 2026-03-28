@@ -85,7 +85,7 @@ export default function MediaPanel({
             draggable
             onDragStart={(event) => {
               event.dataTransfer.effectAllowed = 'copyMove';
-              event.dataTransfer.setData('application/x-autocut-source-id', source.id);
+              event.dataTransfer.setData('application/x-ytais-source-id', source.id);
               event.dataTransfer.setData('text/plain', source.fileName);
             }}
             style={{
