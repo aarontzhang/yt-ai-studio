@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { enforceSameOrigin } from '@/lib/server/requestSecurity';
 import { buildMusicSegments } from '@/lib/indexer/musicSegments';
 import { generateMusicCue } from '@/lib/server/lyriaClient';
-import type { MusicCue, SourceSegment, SegmentVibeClassification, SceneBoundary } from '@/lib/types';
+import type { CaptionEntry, MusicCue, SourceSegment, SegmentVibeClassification, SceneBoundary } from '@/lib/types';
 
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const GEMINI_MODEL = 'gemini-2.0-flash';
@@ -75,6 +75,43 @@ async function classifySegments(
   }));
 }
 
+/** Build coarse SourceSegments from word-level CaptionEntry array (fallback when sourceIndex is absent). */
+function buildSegmentsFromCaptions(captions: CaptionEntry[]): SourceSegment[] {
+  if (captions.length === 0) return [];
+
+  const PAUSE_THRESHOLD_S = 0.5;
+  const groups: CaptionEntry[][] = [];
+  let current: CaptionEntry[] = [captions[0]];
+
+  for (let i = 1; i < captions.length; i++) {
+    const gap = captions[i].startTime - captions[i - 1].endTime;
+    if (gap >= PAUSE_THRESHOLD_S) {
+      groups.push(current);
+      current = [captions[i]];
+    } else {
+      current.push(captions[i]);
+    }
+  }
+  groups.push(current);
+
+  return groups.map((group, idx) => {
+    const nextGroup = groups[idx + 1];
+    const pauseAfterMs = nextGroup
+      ? Math.max(0, (nextGroup[0].startTime - group[group.length - 1].endTime) * 1000)
+      : 0;
+    return {
+      id: `seg_${uuidv4().slice(0, 8)}`,
+      text: group.map((w) => w.text).join(' '),
+      sourceStart: group[0].startTime,
+      sourceEnd: group[group.length - 1].endTime,
+      words: group.map((w) => ({ word: w.text, start: w.startTime, end: w.endTime, isFiller: false })),
+      sceneId: null,
+      fillerWords: [],
+      pauseAfterMs,
+    };
+  });
+}
+
 export async function POST(request: NextRequest) {
   const csrfError = enforceSameOrigin(request);
   if (csrfError) return csrfError;
@@ -114,8 +151,14 @@ export async function POST(request: NextRequest) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editState = project.edit_state as Record<string, any> | null;
   const sourceIndex = editState?.sourceIndex ?? null;
-  const segments: SourceSegment[] = Array.isArray(sourceIndex?.segments) ? sourceIndex.segments : [];
+  let segments: SourceSegment[] = Array.isArray(sourceIndex?.segments) ? sourceIndex.segments : [];
   const scenes: SceneBoundary[] = Array.isArray(sourceIndex?.scenes) ? sourceIndex.scenes : [];
+
+  // Fallback: build segments from word-level transcript captions when sourceIndex is absent
+  if (segments.length === 0) {
+    const rawCaptions = Array.isArray(editState?.sourceTranscriptCaptions) ? editState.sourceTranscriptCaptions as CaptionEntry[] : [];
+    segments = buildSegmentsFromCaptions(rawCaptions);
+  }
 
   if (segments.length === 0) {
     return NextResponse.json({ error: 'No transcript available. Please transcribe the video first.' }, { status: 400 });
