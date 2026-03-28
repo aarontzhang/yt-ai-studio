@@ -630,7 +630,11 @@ export function validateEditAction(rawAction: unknown, context: ActionValidation
   }
 
   if (type === 'add_background_music') {
-    return { ...base, type };
+    const rawPrompt = typeof action.musicPrompt === 'string' ? action.musicPrompt : undefined;
+    const musicPrompt = rawPrompt
+      ? rawPrompt.replace(/[\x00-\x1F\x7F]/g, '').trim().slice(0, 200) || undefined
+      : undefined;
+    return { ...base, type, ...(musicPrompt ? { musicPrompt } : {}) };
   }
 
   if (type === 'remove_background_music') {

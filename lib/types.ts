@@ -437,6 +437,8 @@ export interface EditAction {
   overlayIndex?: number;
   // update_ai_settings
   settings?: Partial<AIEditingSettings>;
+  // add_background_music
+  musicPrompt?: string;
   message: string;
 }
 

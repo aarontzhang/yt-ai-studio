@@ -152,8 +152,9 @@ Example — delete two silent sections (original silence was 22s–45s and 70s�
 ### 12. Add Background Music (add_background_music)
 - Trigger AI-generated background music for the video
 - Analyzes transcript mood/energy and generates instrumental music cues via AI
-- Music cues appear as suggestions for the user to accept or reject before they affect the export
-- Use when the user asks to add background music, score the video, or generate music
+- Music cues appear inline in chat for the user to accept or reject before they affect the export
+- musicPrompt: optional freeform string describing the desired music style or mood — include if the user specified anything (e.g. "upbeat", "calm lo-fi", "epic cinematic"). Omit if the user gave no direction.
+- Use when the user asks to add background music, score the video, generate music, add audio, or similar
 
 ### 13. Remove Background Music (remove_background_music)
 - Remove all background music cues from the project
@@ -222,8 +223,11 @@ Replace/edit existing text overlay (index 0):
 Update AI settings:
 <action>{"type":"update_ai_settings","settings":{"silenceRemoval":{"paddingSeconds":1,"minDurationSeconds":3}},"message":"Updated the silence-removal defaults.","final":true}</action>
 
-Add background music:
+Add background music (no specific direction):
 <action>{"type":"add_background_music","message":"Generating background music for your video.","final":true}</action>
+
+Add background music with a style hint:
+<action>{"type":"add_background_music","musicPrompt":"upbeat energetic electronic","message":"Generating upbeat background music for your video.","final":true}</action>
 
 Remove background music:
 <action>{"type":"remove_background_music","message":"Removing all background music.","final":true}</action>

@@ -9,6 +9,7 @@ import {
   CaptionEntry,
   EditAction,
   MarkerEntry,
+  MusicCue,
   SilenceCandidate,
   SourceIndexAnalysisStateMap,
   SourceIndexTaskState,
@@ -1162,6 +1163,14 @@ function getActionMeta(action: EditAction): { label: string; color: string; summ
         color: '#a78bfa',
         summary: 'Text track',
       };
+    case 'add_background_music':
+      return {
+        label: 'Generate background music',
+        color: '#06b6d4',
+        summary: action.musicPrompt ?? 'AI-scored',
+      };
+    case 'remove_background_music':
+      return { label: 'Remove background music', color: '#ef4444', summary: '' };
     default:
       return { label: 'Edit', color: 'var(--accent)', summary: '' };
   }
@@ -1559,6 +1568,119 @@ function AutoIdentity({
   );
 }
 
+// ─── Music action card ────────────────────────────────────────────────────────
+const MOOD_COLORS: Record<string, string> = {
+  upbeat: '#f59e0b',
+  calm: '#06b6d4',
+  dramatic: '#ef4444',
+  melancholic: '#8b5cf6',
+  playful: '#10b981',
+  suspenseful: '#f97316',
+  inspirational: '#3b82f6',
+  neutral: '#9ca3af',
+};
+
+function formatMusicTime(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function MusicActionCard({
+  generating,
+  error,
+  cues,
+  onAccept,
+  onReject,
+}: {
+  generating: boolean;
+  error: string | null;
+  cues: MusicCue[];
+  onAccept: (cue: MusicCue) => void;
+  onReject: (cueId: string) => void;
+}) {
+  if (generating) {
+    return (
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 0', color: 'var(--fg-muted)', fontSize: 12, fontFamily: 'var(--font-serif)' }}>
+        <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--accent)', animation: 'dotPulse 1.4s ease-in-out infinite' }} />
+        Generating background music…
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <p style={{ fontSize: 11, color: '#f87171', margin: 0, fontFamily: 'var(--font-serif)' }}>{error}</p>
+    );
+  }
+  if (cues.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+      {cues.map((cue) => {
+        const color = MOOD_COLORS[cue.mood] ?? '#9ca3af';
+        const isAccepted = cue.status === 'accepted';
+        const isRejected = cue.status === 'rejected';
+        const isSuggested = cue.status === 'suggested';
+        return (
+          <div key={cue.id} style={{
+            padding: '8px 10px',
+            borderRadius: 8,
+            border: `1px solid ${isAccepted ? 'var(--accent)' : isRejected ? 'var(--border)' : 'var(--border-mid)'}`,
+            background: isRejected ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
+            opacity: isRejected ? 0.5 : 1,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+              <span style={{
+                fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4,
+                background: color + '22', color, textTransform: 'capitalize',
+              }}>
+                {cue.mood}
+              </span>
+              <span style={{ fontSize: 10, color: 'var(--fg-muted)' }}>{cue.energy} energy</span>
+              <span style={{ fontSize: 10, color: 'var(--fg-muted)', marginLeft: 'auto' }}>
+                {formatMusicTime(cue.sourceStart)} – {formatMusicTime(cue.sourceEnd)}
+              </span>
+            </div>
+            {cue.genreHints.length > 0 && (
+              <div style={{ fontSize: 10, color: 'var(--fg-muted)', marginBottom: 6 }}>
+                {cue.genreHints.join(', ')}
+              </div>
+            )}
+            {isAccepted && (
+              <div style={{ fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-serif)' }}>Added to BGM track ✓</div>
+            )}
+            {isSuggested && (
+              <div style={{ display: 'flex', gap: 6 }}>
+                <button
+                  type="button"
+                  onClick={() => onAccept(cue)}
+                  style={{
+                    flex: 1, border: '1px solid var(--accent)', borderRadius: 6,
+                    background: 'rgba(33,212,255,0.08)', color: 'var(--accent)',
+                    fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)',
+                  }}
+                >
+                  Add to timeline
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onReject(cue.id)}
+                  style={{
+                    flex: 1, border: '1px solid var(--border)', borderRadius: 6,
+                    background: 'transparent', color: 'var(--fg-muted)',
+                    fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)',
+                  }}
+                >
+                  Dismiss
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ─── Message bubbles ───────────────────────────────────────────────────────────
 function UserMessage({ msg }: { msg: ChatMessageType }) {
   return (
@@ -1617,6 +1739,19 @@ function AssistantMessage({
   const [reviewResult, setReviewResult] = useState<string | null>(null);
   const [transcriptionDone, setTranscriptionDone] = useState(false);
 
+  // Music generation state (for add_background_music action)
+  const [musicGenerating, setMusicGenerating] = useState(false);
+  const [musicError, setMusicError] = useState<string | null>(null);
+  const [musicCues, setMusicCues] = useState<MusicCue[]>([]);
+  const cueToClipRef = useRef<Map<string, string>>(new Map());
+  const musicTriggeredRef = useRef(false);
+  const setMusicGeneration = useEditorStore(s => s.setMusicGeneration);
+  const acceptMusicCue = useEditorStore(s => s.acceptMusicCue);
+  const rejectMusicCue = useEditorStore(s => s.rejectMusicCue);
+  const addMusicClip = useEditorStore(s => s.addMusicClip);
+  const importSources = useEditorStore(s => s.importSources);
+  const currentProjectId = useEditorStore(s => s.currentProjectId);
+
   const setBackgroundTranscript = useEditorStore(s => s.setBackgroundTranscript);
   const setTranscriptProgress = useEditorStore(s => s.setTranscriptProgress);
   const existingSourceTranscriptCaptions = useEditorStore(s => s.sourceTranscriptCaptions);
@@ -1652,7 +1787,9 @@ function AssistantMessage({
   const reviewableAction = !!action
     && action.type !== 'none'
     && action.type !== 'transcribe_request'
-    && action.type !== 'update_ai_settings';
+    && action.type !== 'update_ai_settings'
+    && action.type !== 'add_background_music'
+    && action.type !== 'remove_background_music';
   const batchReviewActive = !!reviewSessionForMessage && reviewableAction;
   const meta = activeReviewAction ? getActionMeta(activeReviewAction) : null;
   const reviewableItemCount = getReviewItemCount(action);
@@ -1676,6 +1813,65 @@ function AssistantMessage({
     if (!actionPreviouslyApplied || msg.actionStatus === 'completed' || msg.actionStatus === 'rejected') return;
     updateMessage(msg.id, { actionStatus: 'completed', actionResult: actionResultText ?? 'Already applied.' });
   }, [actionPreviouslyApplied, actionResultText, msg.actionStatus, msg.id, updateMessage]);
+
+  // Auto-trigger music generation when add_background_music action is received
+  useEffect(() => {
+    if (
+      action?.type !== 'add_background_music'
+      || musicTriggeredRef.current
+      || msg.isStreaming
+      || !currentProjectId
+    ) return;
+    musicTriggeredRef.current = true;
+    setMusicGenerating(true);
+    setMusicError(null);
+
+    const musicPrompt = action.musicPrompt;
+    fetch('/api/music/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projectId: currentProjectId, ...(musicPrompt ? { musicPrompt } : {}) }),
+    })
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error ?? 'Music generation failed');
+        const cues: MusicCue[] = data.cues ?? [];
+        setMusicCues(cues);
+        setMusicGeneration({ status: 'completed', cues, segments: [], jobId: null, error: null, progress: null });
+      })
+      .catch((err: unknown) => {
+        setMusicError(err instanceof Error ? err.message : 'Music generation failed');
+      })
+      .finally(() => setMusicGenerating(false));
+  }, [action, currentProjectId, msg.isStreaming, setMusicGeneration]);
+
+  const handleMusicAccept = useCallback((cue: MusicCue) => {
+    if (!cue.signedUrl) return;
+    const sourceId = `music-cue-${cue.id}`;
+    const clipId = crypto.randomUUID();
+    importSources(
+      [{ id: sourceId, fileName: `music_${cue.mood}_${cue.id}.mp3`, duration: cue.durationSeconds, isPrimary: false, runtime: { objectUrl: cue.signedUrl, playerUrl: cue.signedUrl } }],
+      { shouldAppendClips: false },
+    );
+    addMusicClip({
+      id: clipId,
+      sourceId,
+      timelineStart: cue.sourceStart,
+      duration: cue.durationSeconds,
+      sourceOffset: 0,
+      volume: Math.pow(10, -18 / 20),
+      fadeIn: cue.fadeInSeconds,
+      fadeOut: cue.fadeOutSeconds,
+    });
+    cueToClipRef.current.set(cue.id, clipId);
+    acceptMusicCue(cue.id);
+    setMusicCues((prev) => prev.map((c) => c.id === cue.id ? { ...c, status: 'accepted' } : c));
+  }, [acceptMusicCue, addMusicClip, importSources]);
+
+  const handleMusicReject = useCallback((cueId: string) => {
+    rejectMusicCue(cueId);
+    setMusicCues((prev) => prev.map((c) => c.id === cueId ? { ...c, status: 'rejected' } : c));
+  }, [rejectMusicCue]);
 
   const reviewedAction = useMemo(
     () => (reviewSessionForMessage ? collapseReviewItemsToAction(reviewSessionForMessage) : null),
@@ -2045,7 +2241,15 @@ function AssistantMessage({
                     Finish the active review before opening another one.
                   </p>
                 )}
-                {action?.type === 'update_ai_settings' ? (
+                {action?.type === 'add_background_music' ? (
+                  <MusicActionCard
+                    generating={musicGenerating}
+                    error={musicError}
+                    cues={musicCues}
+                    onAccept={handleMusicAccept}
+                    onReject={handleMusicReject}
+                  />
+                ) : action?.type === 'update_ai_settings' ? (
                   <button
                     onClick={handleApplySettings}
                     style={{
