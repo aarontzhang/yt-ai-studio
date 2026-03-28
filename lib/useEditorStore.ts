@@ -12,6 +12,7 @@ import {
   EditAction,
   IndexedVideoFrame,
   MarkerEntry,
+  MusicClip,
   ProjectSource,
   SourceIndex,
   SourceIndexAnalysisState,
@@ -539,6 +540,7 @@ function buildBaseEditorState(input?: {
   | 'transitions'
   | 'markers'
   | 'textOverlays'
+  | 'musicClips'
   | 'previewSnapshot'
   | 'previewOwnerId'
   | 'selectedItem'
@@ -592,6 +594,7 @@ function buildBaseEditorState(input?: {
     transitions: [],
     markers: [],
     textOverlays: [],
+    musicClips: [],
     previewSnapshot: null,
     previewOwnerId: null,
     selectedItem: null,
@@ -654,6 +657,7 @@ interface EditorState {
   transitions: TransitionEntry[];
   markers: MarkerEntry[];
   textOverlays: TextOverlayEntry[];
+  musicClips: MusicClip[];
   previewSnapshot: EditSnapshot | null;
   previewOwnerId: string | null;
   selectedItem: SelectedItem;
@@ -719,6 +723,10 @@ interface EditorState {
   setClipVolume: (clipId: string, volume: number, fadeIn?: number, fadeOut?: number) => void;
   setClipFilter: (clipId: string, filter: ColorFilter | null) => void;
   setClipFade: (clipId: string, fadeIn: number, fadeOut: number) => void;
+  addMusicClip: (clip: MusicClip) => void;
+  deleteMusicClip: (id: string) => void;
+  setMusicClipVolume: (id: string, volume: number, fadeIn?: number, fadeOut?: number) => void;
+  moveMusicClip: (id: string, timelineStart: number) => void;
   applyAction: (action: EditAction) => void;
   undo: () => void;
   redo: () => void;
@@ -748,6 +756,7 @@ interface EditorState {
       transitions?: unknown[];
       markers?: unknown[];
       textOverlays?: unknown[];
+      musicClips?: unknown[];
       messages?: unknown[];
       appliedActions?: unknown[];
       aiSettings?: unknown;
@@ -926,6 +935,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       transitions: s.transitions,
       markers: s.markers,
       textOverlays: s.textOverlays,
+      musicClips: s.musicClips,
       appliedActions: s.appliedActions,
     };
   },
@@ -1464,6 +1474,48 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     }));
   },
 
+  addMusicClip: (clip) => {
+    const snap = (get() as EditorStoreWithSnapshot)._snapshot();
+    set((state) => ({
+      history: [...state.history, snap],
+      future: [],
+      musicClips: [...state.musicClips, clip],
+    }));
+  },
+
+  deleteMusicClip: (id) => {
+    const snap = (get() as EditorStoreWithSnapshot)._snapshot();
+    set((state) => ({
+      history: [...state.history, snap],
+      future: [],
+      musicClips: state.musicClips.filter((clip) => clip.id !== id),
+    }));
+  },
+
+  setMusicClipVolume: (id, volume, fadeIn, fadeOut) => {
+    const snap = (get() as EditorStoreWithSnapshot)._snapshot();
+    set((state) => ({
+      history: [...state.history, snap],
+      future: [],
+      musicClips: state.musicClips.map((clip) =>
+        clip.id !== id ? clip : {
+          ...clip,
+          volume,
+          ...(fadeIn !== undefined ? { fadeIn } : {}),
+          ...(fadeOut !== undefined ? { fadeOut } : {}),
+        }
+      ),
+    }));
+  },
+
+  moveMusicClip: (id, timelineStart) => {
+    set((state) => ({
+      musicClips: state.musicClips.map((clip) =>
+        clip.id !== id ? clip : { ...clip, timelineStart: Math.max(0, timelineStart) }
+      ),
+    }));
+  },
+
   applyAction: (action) => {
     if (action.type === 'none') return;
     const snap = (get() as EditorStoreWithSnapshot)._snapshot();
@@ -1532,6 +1584,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       history: history.slice(0, -1),
       future: [snap, ...future],
       appliedActions: prev.appliedActions ?? get().appliedActions,
+      musicClips: prev.musicClips ?? get().musicClips,
       pendingAction: null,
       selectedItem: null,
       taggedMarkerIds: [],
@@ -1563,6 +1616,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       history: [...history, snap],
       future: future.slice(1),
       appliedActions: next.appliedActions ?? get().appliedActions,
+      musicClips: next.musicClips ?? get().musicClips,
       pendingAction: null,
       selectedItem: null,
       taggedMarkerIds: [],
@@ -1896,6 +1950,23 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       textOverlays: ((editState.textOverlays as Partial<TextOverlayEntry>[] | undefined) ?? [])
         .map((entry) => normalizeTextOverlayEntry(entry))
         .filter((entry): entry is TextOverlayEntry => !!entry),
+      musicClips: ((editState.musicClips as Partial<MusicClip>[] | undefined) ?? []).flatMap((clip) => {
+        if (
+          typeof clip.id !== 'string' || typeof clip.sourceId !== 'string' ||
+          !Number.isFinite(clip.timelineStart) || !Number.isFinite(clip.duration) ||
+          !Number.isFinite(clip.sourceOffset)
+        ) return [];
+        return [{
+          id: clip.id,
+          sourceId: clip.sourceId,
+          timelineStart: clip.timelineStart!,
+          duration: Math.max(0, clip.duration!),
+          sourceOffset: Math.max(0, clip.sourceOffset!),
+          volume: Number.isFinite(clip.volume) ? clip.volume! : 1,
+          fadeIn: Number.isFinite(clip.fadeIn) ? clip.fadeIn! : 0,
+          fadeOut: Number.isFinite(clip.fadeOut) ? clip.fadeOut! : 0,
+        }];
+      }),
       messages: ((editState.messages as ChatMessage[] | undefined) ?? []).map((message) => ({
         ...message,
         requestChainId: typeof message.requestChainId === 'string' ? message.requestChainId : undefined,

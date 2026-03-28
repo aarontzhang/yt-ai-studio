@@ -7,6 +7,7 @@ import type {
   CaptionEntry,
   EditAction,
   MarkerEntry,
+  MusicClip,
   TextOverlayEntry,
   TransitionEntry,
   VideoClip,
@@ -18,6 +19,7 @@ export interface EditSnapshot {
   transitions: TransitionEntry[];
   markers: MarkerEntry[];
   textOverlays: TextOverlayEntry[];
+  musicClips?: MusicClip[];
   appliedActions?: AppliedActionRecord[];
 }
 

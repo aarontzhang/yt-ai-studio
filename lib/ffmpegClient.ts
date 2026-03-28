@@ -202,12 +202,26 @@ function toEvenDimension(value: number, fallback: number): number {
 }
 
 async function execOrThrow(ffmpeg: FFmpeg, args: string[]) {
-  const exitCode = await ffmpeg.exec(args);
-  if (exitCode !== 0) {
-    const logSuffix = recentFFmpegLogs.length > 0
-      ? `\n${recentFFmpegLogs.slice(-4).join('\n')}`
-      : '';
-    throw new Error(`FFmpeg exited with code ${exitCode}.${logSuffix}`);
+  const TIMEOUT_MS = 15 * 60 * 1000; // 15 minutes per clip — guards against WASM deadlocks/OOM
+
+  const execPromise = ffmpeg.exec(args);
+  const timeoutId = setTimeout(() => {
+    try { ffmpeg.terminate(); } catch { /* ignore */ }
+    resetFFmpeg();
+  }, TIMEOUT_MS);
+
+  try {
+    const exitCode = await execPromise;
+    clearTimeout(timeoutId);
+    if (exitCode !== 0) {
+      const logSuffix = recentFFmpegLogs.length > 0
+        ? `\n${recentFFmpegLogs.slice(-4).join('\n')}`
+        : '';
+      throw new Error(`FFmpeg exited with code ${exitCode}.${logSuffix}`);
+    }
+  } catch (error) {
+    clearTimeout(timeoutId);
+    throw error;
   }
 }
 
@@ -749,7 +763,7 @@ export async function exportClips({
   try {
     onStage?.('Loading FFmpeg…');
     const ffmpeg = await getFFmpeg((progress) => {
-      reportOverallProgress(phaseStart + (phaseSpan * progress) / 100);
+      reportOverallProgress(phaseStart + (phaseSpan * Math.min(100, progress)) / 100);
     });
     job.throwIfCancelled();
     reportOverallProgress(5);

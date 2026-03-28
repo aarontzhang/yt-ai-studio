@@ -19,6 +19,17 @@ export interface VideoClip {
   fadeOut: number;       // seconds
 }
 
+export interface MusicClip {
+  id: string;
+  sourceId: string;         // references a ProjectSource (audio file)
+  timelineStart: number;    // absolute position in the output timeline (seconds)
+  duration: number;         // audible duration on the timeline (seconds)
+  sourceOffset: number;     // start offset within the source file (seconds)
+  volume: number;           // 0.0–2.0, default 1.0
+  fadeIn: number;           // seconds
+  fadeOut: number;          // seconds
+}
+
 export interface ClipScheduleEntry {
   clipId: string;
   sourceId: string;

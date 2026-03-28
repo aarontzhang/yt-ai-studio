@@ -8,7 +8,7 @@ import {
   shouldUseSeparateVideoLayerForPlaybackHandoff,
 } from '@/lib/playbackEngine';
 import { buildCaptionRenderWindows } from '@/lib/timelineUtils';
-import type { RenderTimelineEntry, VideoClip } from '@/lib/types';
+import type { MusicClip, RenderTimelineEntry, VideoClip } from '@/lib/types';
 import { describeSourceResolutionFailure, resolveProjectSources } from '@/lib/sourceMedia';
 import { getTextOverlayFontSize, getTextOverlayPreviewPositionStyle } from '@/lib/textOverlays';
 
@@ -207,6 +207,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
     },
   });
   const layerLoadTokenRef = useRef(0);
+  const musicAudioBySourceIdRef = useRef<Map<string, HTMLAudioElement>>(new Map());
 
   const setSourceDuration = useEditorStore((s) => s.setSourceDuration);
   const setCurrentTime = useEditorStore((s) => s.setCurrentTime);
@@ -227,6 +228,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
   const liveCaptions = useEditorStore((s) => s.captions);
   const liveTransitions = useEditorStore((s) => s.transitions);
   const liveTextOverlays = useEditorStore((s) => s.textOverlays);
+  const liveMusicClips = useEditorStore((s) => s.musicClips);
 
   const reviewPlaybackUsesBase = Boolean(
     activeReviewSession?.items.some((item) => item.action.type === 'delete_range'),
@@ -244,6 +246,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
   const manualCaptions = playbackSnapshot.captions;
   const transitions = playbackSnapshot.transitions;
   const textOverlays = playbackSnapshot.textOverlays;
+  const musicClips: MusicClip[] = playbackSnapshot.musicClips ?? liveMusicClips;
 
   const clipById = useMemo(() => new Map(clips.map((clip) => [clip.id, clip])), [clips]);
   const resolvedSources = useMemo(() => resolveProjectSources({
@@ -564,6 +567,53 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
     return true;
   }, [getVideoElement, pauseVideo, setLeadLayerSafely]);
 
+  const syncMusicLayers = useCallback((timelineTime: number, options?: { allowPlay?: boolean }) => {
+    const activeClips = musicClips.filter(
+      (clip) => timelineTime >= clip.timelineStart && timelineTime < clip.timelineStart + clip.duration,
+    );
+    const activeSourceIds = new Set(activeClips.map((clip) => clip.sourceId));
+
+    for (const [sourceId, audio] of musicAudioBySourceIdRef.current) {
+      if (!activeSourceIds.has(sourceId)) {
+        audio.pause();
+        audio.volume = 0;
+      }
+    }
+
+    for (const clip of activeClips) {
+      let audio = musicAudioBySourceIdRef.current.get(clip.sourceId);
+      if (!audio) {
+        const url = getResolvedPlayableUrl(clip.sourceId);
+        if (!url) continue;
+        audio = new Audio();
+        audio.preload = 'auto';
+        audio.src = url;
+        musicAudioBySourceIdRef.current.set(clip.sourceId, audio);
+      }
+
+      const sourceTime = clip.sourceOffset + (timelineTime - clip.timelineStart);
+      if (Math.abs(audio.currentTime - sourceTime) > DRIFT_EPSILON) {
+        audio.currentTime = Math.max(0, sourceTime);
+      }
+
+      const elapsed = timelineTime - clip.timelineStart;
+      const remaining = clip.duration - elapsed;
+      let fade = 1;
+      if (clip.fadeIn > 0 && elapsed < clip.fadeIn) {
+        fade = elapsed / clip.fadeIn;
+      } else if (clip.fadeOut > 0 && remaining < clip.fadeOut) {
+        fade = remaining / clip.fadeOut;
+      }
+      audio.volume = Math.max(0, Math.min(1, clip.volume * fade));
+
+      if (options?.allowPlay && playbackIntentRef.current) {
+        if (audio.paused) audio.play().catch(() => {});
+      } else {
+        audio.pause();
+      }
+    }
+  }, [getResolvedPlayableUrl, musicClips]);
+
   const syncLayers = useCallback((timelineTime: number, options?: { allowPlay?: boolean }) => {
     const activeEntries = findRenderEntriesAtTime(renderTimeline, timelineTime);
     const primaryEntry = activeEntries[0];
@@ -658,7 +708,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
       primaryVideo.play().catch(() => {});
     }
     refreshLeadVideoState();
-  }, [activateMissingSourceState, applyClipEffects, clearLayer, clipById, ensureLayerSource, getResolvedPlayableUrl, getVideoElement, hasDisplayedFrame, maybePromotePreparedLayer, pauseVideo, prepareLayerForEntry, refreshLeadVideoState, renderTimeline, setLeadLayerSafely]);
+    syncMusicLayers(timelineTime, options);
+  }, [activateMissingSourceState, applyClipEffects, clearLayer, clipById, ensureLayerSource, getResolvedPlayableUrl, getVideoElement, hasDisplayedFrame, maybePromotePreparedLayer, pauseVideo, prepareLayerForEntry, refreshLeadVideoState, renderTimeline, setLeadLayerSafely, syncMusicLayers]);
 
   const syncAfterSourceLoad = useCallback((layer: LayerId, video: HTMLVideoElement | null) => {
     if (!video) return;
@@ -674,7 +725,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
     currentTimeRef.current = clampedTimelineTime;
     setCurrentTime(clampedTimelineTime);
     syncLayers(clampedTimelineTime, { allowPlay: false });
-  }, [renderTimeline.length, setCurrentTime, syncLayers, totalTimelineDuration]);
+    syncMusicLayers(clampedTimelineTime, { allowPlay: false });
+  }, [renderTimeline.length, setCurrentTime, syncLayers, syncMusicLayers, totalTimelineDuration]);
 
   const cancelPlaybackMonitor = useCallback(() => {
     if (animationFrameRef.current !== null) {
@@ -836,6 +888,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
       cancelPlaybackMonitor();
       pauseInactiveVideo();
       setPlaybackActive(false);
+      for (const audio of musicAudioBySourceIdRef.current.values()) {
+        audio.pause();
+        audio.volume = 0;
+      }
     };
   }, [cancelPlaybackMonitor, getLeadVideo, handlePlaybackTick, leadLayer, pauseInactiveVideo, schedulePlaybackMonitor, setPlaybackActive]);
 
@@ -909,6 +965,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
       if (primaryVideo.paused) {
         playbackIntentRef.current = true;
         syncLayers(currentTimeRef.current, { allowPlay: true });
+        syncMusicLayers(currentTimeRef.current, { allowPlay: true });
         const activeVideo = getLeadVideo();
         if (activeVideo) {
           activeVideo.play().catch(() => {});
@@ -917,9 +974,10 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
         playbackIntentRef.current = false;
         primaryVideo.pause();
         pauseInactiveVideo();
+        syncMusicLayers(currentTimeRef.current, { allowPlay: false });
       }
     },
-  }), [getLeadVideo, pauseInactiveVideo, seekToTimelineTime, syncLayers]);
+  }), [getLeadVideo, pauseInactiveVideo, seekToTimelineTime, syncLayers, syncMusicLayers]);
 
   const togglePlay = useCallback(() => {
     const primaryVideo = getLeadVideo();
@@ -927,6 +985,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
     if (primaryVideo.paused) {
       playbackIntentRef.current = true;
       syncLayers(currentTimeRef.current, { allowPlay: true });
+      syncMusicLayers(currentTimeRef.current, { allowPlay: true });
       const activeVideo = getLeadVideo();
       if (activeVideo) {
         activeVideo.play().catch(() => {});
@@ -935,8 +994,9 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
       playbackIntentRef.current = false;
       primaryVideo.pause();
       pauseInactiveVideo();
+      syncMusicLayers(currentTimeRef.current, { allowPlay: false });
     }
-  }, [getLeadVideo, pauseInactiveVideo, syncLayers]);
+  }, [getLeadVideo, pauseInactiveVideo, syncLayers, syncMusicLayers]);
 
   const primaryLayerOpacity = leadLayer === 'primary' ? 1 : 0;
   const secondaryLayerOpacity = leadLayer === 'secondary' ? 1 : 0;

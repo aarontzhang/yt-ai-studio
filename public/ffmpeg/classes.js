@@ -25,6 +25,20 @@ export class FFmpeg {
      */
     #registerHandlers = () => {
         if (this.#worker) {
+            this.#worker.onerror = (event) => {
+                const message = event.message || 'FFmpeg worker crashed';
+                const ids = Object.keys(this.#rejects);
+                for (const id of ids) {
+                    this.#rejects[id](new Error(message));
+                    delete this.#rejects[id];
+                    delete this.#resolves[id];
+                }
+                this.#worker = null;
+                this.loaded = false;
+            };
+            this.#worker.onmessageerror = () => {
+                this.#worker?.onerror?.(new ErrorEvent('messageerror'));
+            };
             this.#worker.onmessage = ({ data: { id, type, data }, }) => {
                 switch (type) {
                     case FFMessageType.LOAD:
