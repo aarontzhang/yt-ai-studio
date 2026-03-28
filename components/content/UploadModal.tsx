@@ -27,11 +27,15 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
       try {
         setIsUploading(true);
         setUploadError('');
-        const { projectId } = await uploadVideoToSupabase(
+        const { projectId, storagePath } = await uploadVideoToSupabase(
           file,
           (p) => setUploadProgressLocal(Math.round(p)),
         );
-        // Navigate to the editor — let it handle loading the project and video
+        // Set the video in the editor store so the player has a local blob URL
+        // (avoids COEP issues with cross-origin Supabase signed URLs)
+        const { useEditorStore } = await import('@/lib/useEditorStore');
+        const blobUrl = URL.createObjectURL(file);
+        useEditorStore.getState().setVideoCloud(file, blobUrl, storagePath, projectId);
         router.push(`/editor?project=${projectId}`);
         setTimeout(() => {
           setIsUploading(false);
