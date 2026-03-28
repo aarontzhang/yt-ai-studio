@@ -448,7 +448,9 @@ function formatProgressSummary(params: {
   }
 
   return {
-    summary: percentLabel,
+    summary: etaSeconds !== null
+      ? `${percentLabel} • ${formatRemainingLabel(etaSeconds)}`
+      : percentLabel,
     secondary: null,
   };
 }
@@ -2415,11 +2417,7 @@ function ProgressStatusCard({
 }) {
   const targetProgress = getProgressValue(progress);
   const isCompleted = tone === 'completed';
-  const maxProgressRef = useRef<number>(0);
-  if (!isCompleted && targetProgress !== null) {
-    maxProgressRef.current = Math.max(maxProgressRef.current, targetProgress);
-  }
-  const displayProgress = isCompleted ? 1 : (maxProgressRef.current || (targetProgress ?? 0.06));
+  const displayProgress = isCompleted ? 1 : (targetProgress ?? 0.06);
 
   return (
     <div style={{
