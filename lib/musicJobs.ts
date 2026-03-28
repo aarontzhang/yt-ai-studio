@@ -59,11 +59,13 @@ function mapCueRow(row: Record<string, unknown>): MusicCue {
 
 /**
  * Create a generate_music job for the given asset, or return the existing active one.
+ * Pass musicContext to influence Gemini classification with the user's chat intent.
  */
 export async function ensureMusicGenerationJob(
   supabase: SupabaseClient,
   projectId: string,
   assetId: string,
+  musicContext?: string,
 ): Promise<MusicGenerationState | null> {
   try {
     // Check for an existing active music generation job
@@ -102,6 +104,7 @@ export async function ensureMusicGenerationJob(
           job_type: 'generate_music',
           status: 'queued',
           pause_requested: false,
+          payload: musicContext ? { musicContext } : {},
           progress: {
             stage: 'classifying_segments',
             completed: 0,

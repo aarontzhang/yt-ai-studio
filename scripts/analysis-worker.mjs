@@ -208,7 +208,7 @@ function buildMusicSegments(segments, classifications, options = {}) {
 
 // ─── Gemini Classification ────────────────────────────────────────────────────
 
-const GEMINI_SYSTEM_PROMPT = `You are a music supervisor analyzing video transcript segments to select background music. For each segment, classify the emotional mood, energy level, and suggest music genre hints based on the content and pacing.
+const GEMINI_SYSTEM_PROMPT_BASE = `You are a music supervisor analyzing video transcript segments to select background music. For each segment, classify the emotional mood, energy level, and suggest music genre hints based on the content and pacing.
 
 Return a JSON array with one object per segment in the same order as the input:
 {
@@ -226,7 +226,21 @@ Guidelines:
 - confidence reflects how certain you are about the classification (0.5 = uncertain, 1.0 = very clear emotional signal).
 - When text is purely informational with no emotional signal, use mood "neutral" and energy "medium".`;
 
-async function classifySegmentsBatch(segments, apiKey) {
+function buildGeminiSystemPrompt(musicContext) {
+  if (!musicContext || !musicContext.trim()) return GEMINI_SYSTEM_PROMPT_BASE;
+  return `${GEMINI_SYSTEM_PROMPT_BASE}
+
+━━━ USER DIRECTION (HIGHEST PRIORITY) ━━━
+The user explicitly requested a specific music style for this video. This direction OVERRIDES transcript-based classification whenever there is any conflict. Even if the transcript content does not match the requested style, you MUST honor the user's direction.
+
+If the user specified a mood, energy level, or genre — apply it to ALL segments. Use the transcript only to make fine-grained variations within the user's requested style (e.g. slightly higher energy during action moments), but never deviate from the overall direction.
+
+User's conversation context:
+${musicContext}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
+}
+
+async function classifySegmentsBatch(segments, apiKey, systemPrompt) {
   const userContent = JSON.stringify(segments.map((s) => ({
     id: s.id,
     text: s.text,
@@ -239,7 +253,7 @@ async function classifySegmentsBatch(segments, apiKey) {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      system_instruction: { parts: [{ text: GEMINI_SYSTEM_PROMPT }] },
+      system_instruction: { parts: [{ text: systemPrompt }] },
       contents: [{ parts: [{ text: userContent }] }],
       generationConfig: { response_mime_type: 'application/json', temperature: 0.3 },
     }),
@@ -266,12 +280,12 @@ async function classifySegmentsBatch(segments, apiKey) {
   }));
 }
 
-async function classifySegments(segments, apiKey) {
+async function classifySegments(segments, apiKey, systemPrompt) {
   const BATCH_SIZE = 50;
   const results = [];
   for (let i = 0; i < segments.length; i += BATCH_SIZE) {
     const batch = segments.slice(i, i + BATCH_SIZE);
-    const batchResults = await classifySegmentsBatch(batch, apiKey);
+    const batchResults = await classifySegmentsBatch(batch, apiKey, systemPrompt);
     results.push(...batchResults);
   }
   return results;
@@ -349,7 +363,11 @@ async function updateJobProgress(jobId, stage, completed, total, label) {
 }
 
 async function processGenerateMusicJob(job) {
-  const { id: jobId, project_id: projectId, asset_id: assetId } = job;
+  const { id: jobId, project_id: projectId, asset_id: assetId, payload } = job;
+  const musicContext = typeof payload?.musicContext === 'string' ? payload.musicContext.trim() : null;
+  if (musicContext) {
+    console.log(`[${jobId}] Music context from user chat (${musicContext.length} chars).`);
+  }
   const geminiKey = process.env.GOOGLE_GEMINI_API_KEY?.trim();
   const lyriaKey = process.env.GOOGLE_LYRIA_API_KEY?.trim();
 
@@ -437,7 +455,8 @@ async function processGenerateMusicJob(job) {
   // 2. Classify segments
   await updateJobProgress(jobId, 'classifying_segments', 0, segments.length, 'Classifying transcript mood/energy…');
   console.log(`[${jobId}] Classifying ${segments.length} segments with Gemini…`);
-  const classifications = await classifySegments(segments, geminiKey);
+  const geminiSystemPrompt = buildGeminiSystemPrompt(musicContext);
+  const classifications = await classifySegments(segments, geminiKey, geminiSystemPrompt);
   await updateJobProgress(jobId, 'merging_music_segments', segments.length, segments.length, 'Merging into music regions…');
 
   // 3. Build music segments

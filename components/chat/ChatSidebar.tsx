@@ -2782,7 +2782,7 @@ export default function ChatSidebar() {
     }));
   }, [updateRequestChainState]);
 
-  const startMusicPolling = useCallback(async (assistantMsgId: string) => {
+  const startMusicPolling = useCallback(async (assistantMsgId: string, chatContext?: string) => {
     const primarySource = sources.find(s => s.isPrimary);
     if (!currentProjectId || !primarySource?.assetId) {
       useEditorStore.getState().updateMessage(assistantMsgId, { musicGenerationStatus: 'failed', content: 'No video loaded. Please upload a video before generating music.' });
@@ -2790,7 +2790,7 @@ export default function ChatSidebar() {
     }
     try {
       const supabase = getSupabaseBrowser();
-      const job = await ensureMusicGenerationJob(supabase, currentProjectId, primarySource.assetId);
+      const job = await ensureMusicGenerationJob(supabase, currentProjectId, primarySource.assetId, chatContext);
       if (job) {
         setMusicGeneration({ ...musicGeneration, jobId: job.jobId, status: job.status, progress: job.progress });
       }
@@ -2999,7 +2999,13 @@ export default function ChatSidebar() {
           musicMsgId = addMessage(musicMsgProps);
         }
         producedVisibleResponse = true;
-        void startMusicPolling(musicMsgId);
+        // Build chat context from recent conversation turns for Gemini music classification
+        const recentTurns = nextHistory.slice(-8);
+        const chatContext = recentTurns
+          .map(m => `${m.role === 'user' ? 'User' : 'Assistant'}: ${typeof m.content === 'string' ? m.content : ''}`)
+          .filter(line => line.length > 10)
+          .join('\n');
+        void startMusicPolling(musicMsgId, chatContext || undefined);
         return;
       }
 
