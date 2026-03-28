@@ -450,7 +450,8 @@ async function claimNextJob() {
 
   if (error) {
     // If the RPC doesn't exist, fall back to manual claim
-    if (error.code === '42883') {
+    // PostgREST returns PGRST202 for missing functions; Postgres returns 42883
+    if (error.code === '42883' || error.code === 'PGRST202' || /could not find the function/i.test(error.message)) {
       return await claimNextJobManual();
     }
     throw error;
