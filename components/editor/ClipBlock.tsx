@@ -17,9 +17,9 @@ interface ClipBlockProps {
 }
 
 const CLIP_COLOR = {
-  bg: 'rgba(59,130,246,0.35)',
-  border: 'rgba(96,165,250,0.6)',
-  hi: 'rgba(96,165,250,0.9)',
+  bg: 'rgba(255,51,51,0.35)',
+  border: 'rgba(255,136,136,0.6)',
+  hi: 'rgba(255,136,136,0.9)',
 };
 
 export default function ClipBlock({
