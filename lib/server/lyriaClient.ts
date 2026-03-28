@@ -1,4 +1,5 @@
 import type { MusicMood, MusicSegment } from '../types';
+import { normalizeGeneratedAudio } from './audioNormalization';
 
 const LYRIA_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 
@@ -26,6 +27,7 @@ const MOOD_DESCRIPTIONS: Record<MusicMood, string> = {
 export interface LyriaGenerateResult {
   audioBase64: string;
   mimeType: string;
+  extension: string;
 }
 
 function buildPrompt(segment: MusicSegment): string {
@@ -98,9 +100,25 @@ export async function generateMusicCue(
     throw new Error(finishMessage || 'Lyria response contains no audio data');
   }
 
-  return {
+  const normalizedAudio = normalizeGeneratedAudio({
     audioBase64: audioPart.inlineData.data,
     mimeType: audioPart.inlineData.mimeType,
+  });
+
+  if (normalizedAudio.normalizedFromMimeType) {
+    console.info(
+      `[lyria] Normalized inline audio from ${normalizedAudio.normalizedFromMimeType} to ${normalizedAudio.mimeType}.`,
+    );
+  } else if (!normalizedAudio.browserPlayable) {
+    console.warn(
+      `[lyria] Returned inline audio with MIME type ${normalizedAudio.mimeType}, which may not be browser-playable.`,
+    );
+  }
+
+  return {
+    audioBase64: normalizedAudio.audioBase64,
+    mimeType: normalizedAudio.mimeType,
+    extension: normalizedAudio.extension,
   };
 }
 
