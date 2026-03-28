@@ -34,7 +34,7 @@ import {
   RequestChainTranscriptAvailability,
   serializeActionForComparison,
 } from '@/lib/requestChain';
-import AutocutMark from '@/components/branding/AutocutMark';
+import YouTubeAIStudioMark from '@/components/branding/YouTubeAIStudioMark';
 const REVIEW_PREROLL_SECONDS = 2.5;
 
 type ChatResponse = {
@@ -1521,7 +1521,7 @@ function AutoAvatar({ size = 28 }: { size?: number }) {
       boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
       flexShrink: 0,
     }}>
-      <AutocutMark
+      <YouTubeAIStudioMark
         size={Math.max(16, Math.round(size * 0.78))}
         withTile={false}
       />
@@ -3303,7 +3303,7 @@ export default function ChatSidebar() {
                 reviewLocked
                   ? 'Finish the active review…'
                   : isChatLoading
-                    ? 'Autocut is working…'
+                    ? 'YouTube AI Studio is working…'
                     : mediaPreparationBlockingSend
                       ? 'Media is loading. You can type…'
                     : 'Ask about the video or review cuts…'

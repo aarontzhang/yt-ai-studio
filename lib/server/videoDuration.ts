@@ -17,7 +17,7 @@ export async function readStoredVideoDurationSeconds(
     throw error ?? new Error(`Failed to download ${storagePath}.`);
   }
 
-  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'autocut-duration-'));
+  const tempDir = await fs.mkdtemp(path.join(os.tmpdir(), 'ytais-duration-'));
   const filePath = path.join(tempDir, path.basename(storagePath) || 'video.mp4');
 
   try {

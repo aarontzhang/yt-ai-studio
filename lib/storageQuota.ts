@@ -80,7 +80,7 @@ export function getFileSizeErrorMessage(limitBytes = STORAGE_FILE_LIMIT_BYTES) {
 }
 
 export function getVideoDurationLimitErrorMessage() {
-  return 'Autocut currently supports up to 2 hours per uploaded video.';
+  return 'YouTube AI Studio currently supports up to 2 hours per uploaded video.';
 }
 
 export function getQuotaWarningMessage(snapshot: StorageQuotaSnapshot) {

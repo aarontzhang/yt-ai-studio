@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import AutocutMark from '@/components/branding/AutocutMark';
+import YouTubeAIStudioMark from '@/components/branding/YouTubeAIStudioMark';
 import { useAuth } from '@/components/auth/AuthProvider';
 
 const VIDEO_IMAGE = '/landing/hero-gopro-ski.jpg';
@@ -78,8 +78,8 @@ function AppWindow({
           gap: 6,
           marginRight: 52,
         }}>
-          <AutocutMark size={14} withTile />
-          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.01em' }}>Autocut</span>
+          <YouTubeAIStudioMark size={14} />
+          <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', letterSpacing: '0.01em' }}>YouTube AI Studio</span>
         </div>
       </div>
       {children}
@@ -262,7 +262,7 @@ function HeroEditorMock() {
             {/* AI message */}
             <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start' }}>
               <div style={{ flexShrink: 0, marginTop: 1 }}>
-                <AutocutMark size={16} withTile />
+                <YouTubeAIStudioMark size={16} />
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 8, lineHeight: 1.5 }}>
@@ -340,7 +340,7 @@ function ChatFlowMock() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <AutocutMark size={16} withTile />
+          <YouTubeAIStudioMark size={16} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 8, lineHeight: 1.5 }}>
               Found 3 moments. Markers placed.
@@ -382,7 +382,7 @@ function ChatFlowMock() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <AutocutMark size={16} withTile />
+          <YouTubeAIStudioMark size={16} />
           <div style={{ flex: 1 }}>
             <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginBottom: 8, lineHeight: 1.5 }}>Done.</div>
             <div style={{
@@ -533,7 +533,7 @@ export default function LandingPage() {
         justifyContent: 'center',
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
-          <AutocutMark size={36} withTile />
+          <YouTubeAIStudioMark size={36} />
           <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>Opening your editor…</span>
         </div>
       </div>
@@ -667,8 +667,8 @@ export default function LandingPage() {
         flexShrink: 0,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 9 }}>
-          <AutocutMark size={32} withTile />
-          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em' }}>Autocut</span>
+          <YouTubeAIStudioMark size={32} />
+          <span style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-0.02em' }}>YouTube AI Studio</span>
         </div>
         <Link href={SIGN_IN_HREF} className="iridescent-button" style={{
           display: 'inline-block', padding: '8px 20px',
@@ -698,7 +698,7 @@ export default function LandingPage() {
             fontSize: 16, color: 'rgba(255,255,255,0.42)',
             lineHeight: 1.65, margin: '0 0 36px',
           }}>
-            Tell Autocut what you want changed. Cut the filler, trim a section, place markers. It finds the right moments and applies every edit directly to your timeline.
+            Tell YouTube AI Studio what you want changed. It finds the right moments and applies every edit directly to your timeline.
           </p>
           <div>
             <Link href={SIGN_IN_HREF} className="iridescent-button" style={{
@@ -788,8 +788,8 @@ export default function LandingPage() {
         display: 'flex', alignItems: 'center',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <AutocutMark size={20} withTile />
-          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>Autocut</span>
+          <YouTubeAIStudioMark size={20} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: 'rgba(255,255,255,0.35)' }}>YouTube AI Studio</span>
         </div>
         <p className="lp-footer-contact" style={{
           margin: '0 0 0 auto',

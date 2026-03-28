@@ -1,6 +1,6 @@
-# Autocut
+# YouTube AI Studio
 
-Autocut is a Next.js video editor with Supabase-backed auth/storage, browser-side FFmpeg editing, OpenAI transcription, Anthropic-powered assistant flows, and a background worker for source-video indexing.
+YouTube AI Studio is a Next.js video editor with Supabase-backed auth/storage, browser-side FFmpeg editing, OpenAI transcription, Anthropic-powered assistant flows, and a background worker for source-video indexing.
 
 ## Local Development
 

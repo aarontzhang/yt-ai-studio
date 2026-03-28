@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import ProjectDashboard from '@/components/projects/ProjectDashboard';
 import { useAuth } from '@/components/auth/AuthProvider';
 import UserProfileMenu from '@/components/auth/UserProfileMenu';
-import AutocutMark from '@/components/branding/AutocutMark';
+import YouTubeAIStudioMark from '@/components/branding/YouTubeAIStudioMark';
 import { useStorageQuota } from '@/lib/useStorageQuota';
 export interface Project {
   id: string;
@@ -89,8 +89,8 @@ export default function ProjectsPage() {
         height: 52, background: 'var(--bg-panel)', borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', padding: '0 24px', gap: 12,
       }}>
-        <AutocutMark size={24} />
-        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)', letterSpacing: '-0.02em' }}>Autocut</span>
+        <YouTubeAIStudioMark size={24} />
+        <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--fg-primary)', letterSpacing: '-0.02em' }}>YouTube AI Studio</span>
         <div style={{ flex: 1 }} />
         {user && <UserProfileMenu user={user} dashboardLabel="Go to Dashboard" />}
       </div>

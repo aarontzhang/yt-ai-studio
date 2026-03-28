@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* Autocut — dark neutral base with YouTube Studio accents */
+/* YouTube AI Studio — dark neutral base with YouTube Studio accents */
 :root {
   --bg-base:     #0f0f0f;
   --bg-panel:    #181818;
@@ -40,7 +40,7 @@
   --playhead:    #ffffff;
   --selection:   rgba(62, 166, 255, 0.24);
 
-  /* ── YouTube Studio tokens (additive — Autocut tokens above are untouched) ── */
+  /* ── YouTube Studio tokens (additive — YouTube AI Studio tokens above are untouched) ── */
 
   /* Backgrounds */
   --yt-bg-base:         #0f0f0f;
