@@ -592,7 +592,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
       }
 
       const sourceTime = clip.sourceOffset + (timelineTime - clip.timelineStart);
-      if (Math.abs(audio.currentTime - sourceTime) > DRIFT_EPSILON) {
+      if (audio.readyState >= 2 && Math.abs(audio.currentTime - sourceTime) > DRIFT_EPSILON) {
         audio.currentTime = Math.max(0, sourceTime);
       }
 
@@ -607,12 +607,43 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
       audio.volume = Math.max(0, Math.min(1, clip.volume * fade));
 
       if (options?.allowPlay && playbackIntentRef.current) {
-        if (audio.paused) audio.play().catch(() => {});
+        if (audio.paused) {
+          audio.play().catch((e: unknown) => {
+            if (e instanceof Error && e.name !== 'AbortError') {
+              console.warn('[BGM] play failed:', e.name, e.message);
+            }
+          });
+        }
       } else {
         audio.pause();
       }
     }
   }, [getResolvedPlayableUrl, musicClips]);
+
+  // Preload audio elements as soon as music clips are added so they are ready before playback
+  // reaches the clip's start time. Without this, creating the element on the first active frame
+  // and immediately seeking + calling play() triggers an AbortError on unloaded media.
+  useEffect(() => {
+    for (const clip of musicClips) {
+      if (!musicAudioBySourceIdRef.current.has(clip.sourceId)) {
+        const url = getResolvedPlayableUrl(clip.sourceId);
+        if (url) {
+          const audio = new Audio();
+          audio.preload = 'auto';
+          audio.src = url;
+          musicAudioBySourceIdRef.current.set(clip.sourceId, audio);
+        }
+      }
+    }
+    // Remove audio elements for clips that are no longer in the store
+    for (const [sourceId, audio] of musicAudioBySourceIdRef.current) {
+      if (!musicClips.some((c) => c.sourceId === sourceId)) {
+        audio.pause();
+        audio.src = '';
+        musicAudioBySourceIdRef.current.delete(sourceId);
+      }
+    }
+  }, [musicClips, getResolvedPlayableUrl]);
 
   const syncLayers = useCallback((timelineTime: number, options?: { allowPlay?: boolean }) => {
     const activeEntries = findRenderEntriesAtTime(renderTimeline, timelineTime);
