@@ -1,10 +1,16 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 import { useEditorStore } from '@/lib/useEditorStore';
 import { ensureMusicGenerationJob, fetchMusicCues, getLatestMusicJobForAsset, updateMusicCueStatus } from '@/lib/musicJobs';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import type { MusicCue } from '@/lib/types';
+
+/** Convert dB to linear gain (0 dB = 1.0, -18 dB ≈ 0.126) */
+function dbToLinear(db: number): number {
+  return Math.pow(10, db / 20);
+}
 
 const MOOD_COLORS: Record<string, string> = {
   upbeat: '#f59e0b',
@@ -148,9 +154,15 @@ export default function MusicPanel() {
   const sources = useEditorStore((s) => s.sources);
   const currentProjectId = useEditorStore((s) => s.currentProjectId);
   const sourceIndexFreshBySourceId = useEditorStore((s) => s.sourceIndexFreshBySourceId);
+  const importSources = useEditorStore((s) => s.importSources);
+  const addMusicClip = useEditorStore((s) => s.addMusicClip);
+  const deleteMusicClip = useEditorStore((s) => s.deleteMusicClip);
+  const setMusicClipVolume = useEditorStore((s) => s.setMusicClipVolume);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Maps cueId → musicClipId so we can delete/update the clip on reject or volume change
+  const cueToClipRef = useRef<Map<string, string>>(new Map());
 
   const primarySource = sources.find((s) => s.isPrimary);
   const hasTranscript = primarySource
@@ -216,43 +228,104 @@ export default function MusicPanel() {
     };
   }, [musicGeneration.jobId, musicGeneration.status, currentProjectId, primarySource?.assetId, setMusicGeneration, musicGeneration]);
 
+  const activateCue = useCallback(async (cue: MusicCue) => {
+    if (!cue.storagePath) return;
+    try {
+      const supabase = getSupabaseBrowser();
+      const { data: urlData, error: urlError } = await supabase.storage
+        .from('music')
+        .createSignedUrl(cue.storagePath, 60 * 60 * 24);
+      if (urlError || !urlData?.signedUrl) {
+        console.error('Failed to get signed URL for music cue:', urlError);
+        return;
+      }
+      const signedUrl = urlData.signedUrl;
+      const sourceId = `music-cue-${cue.id}`;
+      importSources(
+        [{ id: sourceId, fileName: `music_${cue.mood}_${cue.id}.mp3`, duration: cue.durationSeconds, isPrimary: false, runtime: { objectUrl: signedUrl, playerUrl: signedUrl } }],
+        { shouldAppendClips: false },
+      );
+      const clipId = uuidv4();
+      addMusicClip({
+        id: clipId,
+        sourceId,
+        timelineStart: cue.sourceStart,
+        duration: cue.durationSeconds,
+        sourceOffset: 0,
+        volume: dbToLinear(cue.volumeDb),
+        fadeIn: cue.fadeInSeconds,
+        fadeOut: cue.fadeOutSeconds,
+      });
+      cueToClipRef.current.set(cue.id, clipId);
+    } catch (err) {
+      console.error('Failed to activate music cue as MusicClip:', err);
+    }
+  }, [importSources, addMusicClip]);
+
   const handleAccept = useCallback((cueId: string) => {
     acceptMusicCue(cueId);
+    const cue = musicGeneration.cues.find((c) => c.id === cueId);
+    if (cue) void activateCue(cue);
     const supabase = getSupabaseBrowser();
     updateMusicCueStatus(supabase, cueId, { status: 'accepted' }).catch(console.error);
-  }, [acceptMusicCue]);
+  }, [acceptMusicCue, musicGeneration.cues, activateCue]);
 
   const handleReject = useCallback((cueId: string) => {
     rejectMusicCue(cueId);
+    const clipId = cueToClipRef.current.get(cueId);
+    if (clipId) {
+      deleteMusicClip(clipId);
+      cueToClipRef.current.delete(cueId);
+    }
     const supabase = getSupabaseBrowser();
     updateMusicCueStatus(supabase, cueId, { status: 'rejected' }).catch(console.error);
-  }, [rejectMusicCue]);
+  }, [rejectMusicCue, deleteMusicClip]);
 
   const handleVolumeChange = useCallback((cueId: string, volumeDb: number) => {
     updateMusicCue(cueId, { volumeDb });
+    const clipId = cueToClipRef.current.get(cueId);
+    if (clipId) setMusicClipVolume(clipId, dbToLinear(volumeDb));
     const supabase = getSupabaseBrowser();
     updateMusicCueStatus(supabase, cueId, { volume_db: volumeDb }).catch(console.error);
-  }, [updateMusicCue]);
+  }, [updateMusicCue, setMusicClipVolume]);
 
   const handleAcceptAll = useCallback(() => {
     acceptAllMusicCues();
     const supabase = getSupabaseBrowser();
     for (const cue of musicGeneration.cues) {
       if (cue.status === 'suggested') {
+        void activateCue(cue);
         updateMusicCueStatus(supabase, cue.id, { status: 'accepted' }).catch(console.error);
       }
     }
-  }, [acceptAllMusicCues, musicGeneration.cues]);
+  }, [acceptAllMusicCues, musicGeneration.cues, activateCue]);
 
   const handleRejectAll = useCallback(() => {
     rejectAllMusicCues();
+    for (const cue of musicGeneration.cues) {
+      if (cue.status === 'suggested') {
+        const clipId = cueToClipRef.current.get(cue.id);
+        if (clipId) {
+          deleteMusicClip(clipId);
+          cueToClipRef.current.delete(cue.id);
+        }
+      }
+    }
     const supabase = getSupabaseBrowser();
     for (const cue of musicGeneration.cues) {
       if (cue.status === 'suggested') {
         updateMusicCueStatus(supabase, cue.id, { status: 'rejected' }).catch(console.error);
       }
     }
-  }, [rejectAllMusicCues, musicGeneration.cues]);
+  }, [rejectAllMusicCues, deleteMusicClip, musicGeneration.cues]);
+
+  const handleClearMusic = useCallback(() => {
+    for (const clipId of cueToClipRef.current.values()) {
+      deleteMusicClip(clipId);
+    }
+    cueToClipRef.current.clear();
+    clearMusic();
+  }, [clearMusic, deleteMusicClip]);
 
   const hasSuggested = musicGeneration.cues.some((c) => c.status === 'suggested');
   const hasCues = musicGeneration.cues.length > 0;
@@ -415,7 +488,7 @@ export default function MusicPanel() {
 
             <button
               type="button"
-              onClick={clearMusic}
+              onClick={handleClearMusic}
               style={{
                 width: '100%',
                 marginTop: 10,

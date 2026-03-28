@@ -9,7 +9,7 @@ function getApiKey(): string {
 }
 
 function getModel(): string {
-  return process.env.LYRIA_MODEL?.trim() || 'lyria-realtime-exp';
+  return process.env.LYRIA_MODEL?.trim() || 'lyria-003';
 }
 
 const MOOD_DESCRIPTIONS: Record<MusicMood, string> = {

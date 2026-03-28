@@ -52,8 +52,8 @@ const LYRIA_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const POLL_INTERVAL_MS = Number(process.env.WORKER_POLL_INTERVAL_MS ?? 5000);
 const CONCURRENCY = Number(process.env.WORKER_CONCURRENCY ?? 1);
 const WORKER_ID = `worker-${randomUUID().slice(0, 8)}`;
-const GEMINI_MODEL = process.env.GEMINI_CLASSIFICATION_MODEL?.trim() || 'gemini-2.0-flash';
-const LYRIA_MODEL = process.env.LYRIA_MODEL?.trim() || 'lyria-realtime-exp';
+const GEMINI_MODEL = process.env.GEMINI_CLASSIFICATION_MODEL?.trim() || 'gemini-1.5-flash';
+const LYRIA_MODEL = process.env.LYRIA_MODEL?.trim() || 'lyria-003';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
