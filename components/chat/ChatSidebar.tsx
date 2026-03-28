@@ -1603,54 +1603,48 @@ function MusicCueCard({
   cue,
   onAccept,
   onReject,
+  isLast,
 }: {
   cue: MusicCue;
   onAccept: (cue: MusicCue) => void;
   onReject: (id: string) => void;
+  isLast: boolean;
 }) {
-  const color = MUSIC_MOOD_COLORS[cue.mood] ?? '#9ca3af';
   const isSuggested = cue.status === 'suggested';
   const isAccepted = cue.status === 'accepted';
   const isRejected = cue.status === 'rejected';
   return (
     <div style={{
-      padding: '8px 10px', borderRadius: 8,
-      border: `1px solid ${isAccepted ? 'var(--accent)' : isRejected ? 'var(--border)' : 'var(--border-mid)'}`,
-      background: isRejected ? 'rgba(255,255,255,0.01)' : 'rgba(255,255,255,0.03)',
-      opacity: isRejected ? 0.5 : 1,
+      padding: '4px 0',
+      borderBottom: isLast ? 'none' : '1px solid rgba(255,255,255,0.04)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 8,
+      opacity: isRejected ? 0.4 : 1,
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-        <span style={{ fontSize: 10, fontWeight: 600, padding: '2px 6px', borderRadius: 4, background: color + '22', color, textTransform: 'capitalize' }}>
-          {cue.mood}
-        </span>
-        <span style={{ fontSize: 10, color: 'var(--fg-muted)' }}>{cue.energy} energy</span>
-        <span style={{ fontSize: 10, color: 'var(--fg-muted)', marginLeft: 'auto' }}>
-          {formatMusicTime(cue.sourceStart)} – {formatMusicTime(cue.sourceEnd)}
-        </span>
-      </div>
-      {cue.genreHints.length > 0 && (
-        <div style={{ fontSize: 10, color: 'var(--fg-muted)', marginBottom: 6 }}>{cue.genreHints.join(', ')}</div>
-      )}
+      <span style={{ fontFamily: 'var(--font-serif)', fontSize: 10, color: 'var(--fg-muted)', flex: 1 }}>
+        {formatMusicTime(cue.sourceStart)} – {formatMusicTime(cue.sourceEnd)}
+      </span>
       {isSuggested && (
-        <div style={{ display: 'flex', gap: 6 }}>
-          <button type="button" onClick={() => onAccept(cue)} style={{ flex: 1, border: '1px solid var(--accent)', borderRadius: 6, background: 'rgba(255,0,0,0.08)', color: 'var(--accent)', fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
-            Add to timeline
+        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+          <button type="button" onClick={() => onAccept(cue)} style={{ border: '1px solid var(--accent)', borderRadius: 4, background: 'rgba(255,0,0,0.08)', color: 'var(--accent)', fontSize: 10, padding: '2px 6px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+            Add
           </button>
-          <button type="button" onClick={() => onReject(cue.id)} style={{ flex: 1, border: '1px solid var(--border-mid)', borderRadius: 6, background: 'rgba(255,255,255,0.04)', color: 'var(--fg-secondary)', fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
-            Dismiss
+          <button type="button" onClick={() => onReject(cue.id)} style={{ border: '1px solid var(--border-mid)', borderRadius: 4, background: 'none', color: 'var(--fg-muted)', fontSize: 10, padding: '2px 6px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+            Skip
           </button>
         </div>
       )}
       {isAccepted && (
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
           <span style={{ fontSize: 10, color: 'var(--accent)', fontFamily: 'var(--font-serif)' }}>✓ Accepted</span>
-          <button type="button" onClick={() => onReject(cue.id)} style={{ marginLeft: 'auto', fontSize: 10, color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', fontFamily: 'var(--font-serif)' }}>
+          <button type="button" onClick={() => onReject(cue.id)} style={{ fontSize: 10, color: 'var(--fg-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', fontFamily: 'var(--font-serif)' }}>
             Remove
           </button>
         </div>
       )}
       {cue.status === 'failed' && (
-        <div style={{ fontSize: 10, color: '#ef4444' }}>Generation failed</div>
+        <span style={{ fontSize: 10, color: '#ef4444', flexShrink: 0 }}>Failed</span>
       )}
     </div>
   );
@@ -1719,7 +1713,7 @@ function MusicCuesBlock({ musicCues, musicGenerationStatus }: { musicCues?: Musi
         borderBottom: '1px solid rgba(255,255,255,0.06)',
         display: 'flex', alignItems: 'center', gap: 8,
       }}>
-        <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#3b82f6', flexShrink: 0 }} />
+        <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--accent)', flexShrink: 0 }} />
         <span style={{ fontSize: 12, color: 'var(--fg-primary)', fontWeight: 600, fontFamily: 'var(--font-serif)' }}>
           Generate background music
         </span>
@@ -1729,9 +1723,9 @@ function MusicCuesBlock({ musicCues, musicGenerationStatus }: { musicCues?: Musi
           </span>
         )}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, padding: '10px 12px' }}>
+      <div style={{ padding: '6px 12px 8px', display: 'flex', flexDirection: 'column' }}>
         {isGenerating && <MusicGeneratingCard progress={musicGeneration.progress} />}
-        {hasCues && musicCues!.map(staticCue => {
+        {hasCues && musicCues!.map((staticCue, i) => {
           const liveCue = musicGeneration.cues.find(c => c.id === staticCue.id) ?? staticCue;
           return (
             <MusicCueCard
@@ -1739,6 +1733,7 @@ function MusicCuesBlock({ musicCues, musicGenerationStatus }: { musicCues?: Musi
               cue={liveCue}
               onAccept={handleCueAccept}
               onReject={handleCueReject}
+              isLast={i === musicCues!.length - 1}
             />
           );
         })}

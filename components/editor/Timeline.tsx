@@ -551,7 +551,7 @@ export default function Timeline({
           <div style={{ height: RULER_H, borderBottom: '1px solid var(--border)' }} />
           <TrackHeader icon={<VideoIcon />} label="V1" height={TRACK_HEIGHT} color="var(--blue-clip-hi)" />
           <TrackHeader icon={<AudioIcon />} label="A1" height={TRACK_HEIGHT} color="var(--blue-clip-hi)" />
-          {hasMusicClips && <EffectHeader label="BGM" color="rgba(167,243,208,0.8)" />}
+          {hasMusicClips && <EffectHeader label="BGM" color="var(--blue-clip-hi)" />}
           {hasCaptions && <EffectHeader label="CC" color="var(--caption-clip)" />}
           {hasTextOverlays && <EffectHeader label="Text" color="var(--text-clip)" />}
           {hasTransitions && <EffectHeader label="Trans." color="rgba(255,255,255,0.5)" />}
@@ -861,8 +861,8 @@ export default function Timeline({
                       top: 3,
                       height: EFFECT_TRACK_H - 6,
                       borderRadius: 3,
-                      background: 'rgba(52,211,153,0.28)',
-                      border: '1px solid rgba(52,211,153,0.5)',
+                      background: 'rgba(255,136,136,0.28)',
+                      border: '1px solid rgba(255,136,136,0.5)',
                       display: 'flex',
                       alignItems: 'center',
                       padding: '0 5px',
