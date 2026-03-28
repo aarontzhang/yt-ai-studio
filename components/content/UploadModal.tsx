@@ -31,7 +31,6 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
       try {
         setIsUploading(true);
         setUploadError('');
-        const blobUrl = URL.createObjectURL(file);
         const { projectId, storagePath } = await uploadVideoToSupabase(
           file,
           (p) => {
@@ -39,9 +38,15 @@ export default function UploadModal({ open, onClose }: UploadModalProps) {
             setUploadProgressState(Math.round(p));
           },
         );
+        const blobUrl = URL.createObjectURL(file);
         setVideoCloud(file, blobUrl, storagePath, projectId);
-        onClose();
+        // Navigate first, then close — closing dialog can interfere with navigation
         router.push(`/editor?project=${projectId}`);
+        // Small delay to let navigation start before unmounting the modal
+        setTimeout(() => {
+          setIsUploading(false);
+          onClose();
+        }, 100);
       } catch (err) {
         console.error('Upload failed:', err);
         setUploadError(err instanceof Error ? err.message : 'Upload failed. Please sign in and try again.');
