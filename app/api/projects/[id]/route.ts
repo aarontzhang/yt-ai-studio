@@ -1,5 +1,5 @@
 import { getSupabaseServer } from '@/lib/supabase/server';
-import { ensureAssetIndexingJob, ensurePrimaryMediaAssetIfSupported } from '@/lib/analysisJobs';
+import { ensurePrimaryMediaAssetIfSupported } from '@/lib/analysisJobs';
 import { readStoredVideoDurationSeconds } from '@/lib/server/videoDuration';
 import { removeProjectStorageObjects } from '@/lib/server/storageQuota';
 import { NextRequest, NextResponse } from 'next/server';
@@ -135,9 +135,6 @@ export async function PATCH(request: NextRequest, { params }: { params: Promise<
     try {
       const asset = await ensurePrimaryMediaAssetIfSupported(supabase, id, body.video_path);
       assetId = asset?.id ?? null;
-      if (asset?.id) {
-        await ensureAssetIndexingJob(supabase, id, asset.id);
-      }
     } catch (assetError) {
       console.error('[projects.patch] failed to initialize media asset record', assetError);
     }

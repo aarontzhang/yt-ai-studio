@@ -46,11 +46,8 @@ export const DEFAULT_AI_EDITING_SETTINGS: AIEditingSettings = {
     preserveShortPauses: false,
     requireSpeakerAbsence: true,
   },
-  frameInspection: {
-    defaultFrameCount: 30,
-    overviewIntervalSeconds: 5,
-    maxOverviewFrames: 720,
-  },
+  // frameInspection intentionally omitted — visual frame analysis infrastructure removed
+  frameInspection: undefined as unknown as AIEditingSettings['frameInspection'],
   captions: {
     wordsPerCaption: 4,
   },
@@ -80,7 +77,7 @@ export function mergeAISettings(
 
   return {
     silenceRemoval: { ...current.silenceRemoval, ...normalizedPatch.silenceRemoval },
-    frameInspection: { ...current.frameInspection, ...normalizedPatch.frameInspection },
+    frameInspection: undefined as unknown as AIEditingSettings['frameInspection'],
     captions: { ...current.captions, ...normalizedPatch.captions },
     transitions: { ...current.transitions, ...normalizedTransitionPatch },
     textOverlays: { ...current.textOverlays, ...normalizedPatch.textOverlays },

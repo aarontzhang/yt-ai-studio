@@ -290,15 +290,6 @@ function sanitizeSettings(settings: unknown): Partial<AIEditingSettings> | null 
     if (Object.keys(partial).length > 0) next.silenceRemoval = partial as AIEditingSettings['silenceRemoval'];
   }
 
-  if (candidate.frameInspection && typeof candidate.frameInspection === 'object') {
-    const frameInspection = candidate.frameInspection as Record<string, unknown>;
-    const partial: Partial<AIEditingSettings['frameInspection']> = {};
-    if (Number.isInteger(frameInspection.defaultFrameCount)) partial.defaultFrameCount = clamp(Number(frameInspection.defaultFrameCount), 4, 60);
-    if (isFiniteNumber(frameInspection.overviewIntervalSeconds)) partial.overviewIntervalSeconds = clamp(frameInspection.overviewIntervalSeconds, 0.1, 10);
-    if (Number.isInteger(frameInspection.maxOverviewFrames)) partial.maxOverviewFrames = clamp(Number(frameInspection.maxOverviewFrames), 60, 1200);
-    if (Object.keys(partial).length > 0) next.frameInspection = partial as AIEditingSettings['frameInspection'];
-  }
-
   if (candidate.captions && typeof candidate.captions === 'object') {
     const captions = candidate.captions as Record<string, unknown>;
     if (Number.isInteger(captions.wordsPerCaption)) {

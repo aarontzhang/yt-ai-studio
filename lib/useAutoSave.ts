@@ -36,9 +36,6 @@ export function buildProjectEditState(state: ReturnType<typeof useEditorStore.ge
     transcriptError: state.transcriptError,
     sources: state.sources,
     sourceTranscriptCaptions: state.sourceTranscriptCaptions,
-    sourceOverviewFrames: (state.sourceOverviewFrames ?? [])
-      .filter(frame => !!frame.description?.trim() || !!frame.image)
-      .map(persistSourceOverviewFrame),
     sourceIndexFreshBySourceId: state.sourceIndexFreshBySourceId,
     sourceIndex: state.sourceIndex,
     videoDuration: state.videoDuration,
@@ -74,7 +71,6 @@ export function useAutoSave() {
   const transcriptError = useEditorStore(s => s.transcriptError);
   const sources = useEditorStore(s => s.sources);
   const sourceTranscriptCaptions = useEditorStore(s => s.sourceTranscriptCaptions);
-  const sourceOverviewFrames = useEditorStore(s => s.sourceOverviewFrames);
   const sourceIndexFreshBySourceId = useEditorStore(s => s.sourceIndexFreshBySourceId);
   const sourceIndex = useEditorStore(s => s.sourceIndex);
   const videoDuration = useEditorStore(s => s.videoDuration);
@@ -110,5 +106,5 @@ export function useAutoSave() {
     }, 1500);
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [clips, captions, transitions, markers, textOverlays, messages, appliedActions, aiSettings, backgroundTranscript, transcriptStatus, transcriptError, sources, sourceTranscriptCaptions, sourceOverviewFrames, sourceIndexFreshBySourceId, sourceIndex, videoDuration, currentProjectId, setSaveStatus]);
+  }, [clips, captions, transitions, markers, textOverlays, messages, appliedActions, aiSettings, backgroundTranscript, transcriptStatus, transcriptError, sources, sourceTranscriptCaptions, sourceIndexFreshBySourceId, sourceIndex, videoDuration, currentProjectId, setSaveStatus]);
 }

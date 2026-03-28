@@ -7,7 +7,6 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "worker:analysis": "node scripts/analysis-worker.mjs",
     "postinstall": "node scripts/copy-ffmpeg.mjs"
   },
   "dependencies": {

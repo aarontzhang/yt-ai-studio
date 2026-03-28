@@ -133,9 +133,6 @@ export default function EditorLayout({ projectId }: { projectId?: string | null 
       sourceTranscriptCaptions: Array.isArray(sourceIndexData?.sourceTranscriptCaptions)
         ? sourceIndexData.sourceTranscriptCaptions
         : null,
-      sourceOverviewFrames: Array.isArray(sourceIndexData?.sourceOverviewFrames)
-        ? sourceIndexData.sourceOverviewFrames
-        : null,
       sourceIndexFreshBySourceId: sourceIndexData?.sourceIndexFreshBySourceId ?? undefined,
       analysis: sourceIndexData?.analysis ?? null,
       analysisBySourceId: sourceIndexData?.analysisBySourceId ?? {},

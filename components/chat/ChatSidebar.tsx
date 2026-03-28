@@ -1341,9 +1341,6 @@ function ActionDetails({ action }: { action: EditAction }) {
     const details = [
       settings?.silenceRemoval?.paddingSeconds !== undefined ? `silence padding ${settings.silenceRemoval.paddingSeconds}s` : '',
       settings?.silenceRemoval?.minDurationSeconds !== undefined ? `min silence ${settings.silenceRemoval.minDurationSeconds}s` : '',
-      settings?.frameInspection?.defaultFrameCount !== undefined ? `inspect ${settings.frameInspection.defaultFrameCount} frames` : '',
-      settings?.frameInspection?.overviewIntervalSeconds !== undefined ? `long-video coarse spacing ~${settings.frameInspection.overviewIntervalSeconds}s` : '',
-      settings?.frameInspection?.maxOverviewFrames !== undefined ? `max ${settings.frameInspection.maxOverviewFrames} coarse frames` : '',
       settings?.captions?.wordsPerCaption !== undefined ? `${settings.captions.wordsPerCaption} words per caption` : '',
       settings?.transitions?.defaultDuration !== undefined ? `${settings.transitions.defaultDuration}s transitions` : '',
       settings?.textOverlays?.defaultFontSize !== undefined ? `${settings.textOverlays.defaultFontSize}px text` : '',

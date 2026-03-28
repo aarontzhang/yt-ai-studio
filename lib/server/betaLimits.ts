@@ -3,9 +3,7 @@ import { getSupabaseAdmin } from '@/lib/supabase/admin';
 
 export type BetaUsageMetric =
   | 'chat_requests'
-  | 'transcribe_seconds'
-  | 'frame_descriptions'
-  | 'visual_searches';
+  | 'transcribe_seconds';
 
 type BetaLimitConfig = {
   envName: string;
@@ -37,16 +35,6 @@ const LIMITS: Record<BetaUsageMetric, BetaLimitConfig> = {
     envName: 'BETA_MAX_TRANSCRIBE_SECONDS_PER_DAY',
     defaultLimit: 3600,
     label: 'transcription',
-  },
-  frame_descriptions: {
-    envName: 'BETA_MAX_FRAME_DESCRIPTIONS_PER_DAY',
-    defaultLimit: 500,
-    label: 'frame descriptions',
-  },
-  visual_searches: {
-    envName: 'BETA_MAX_VISUAL_SEARCHES_PER_DAY',
-    defaultLimit: 50,
-    label: 'visual searches',
   },
 };
 
