@@ -231,18 +231,10 @@ export default function MusicPanel() {
   const activateCue = useCallback(async (cue: MusicCue) => {
     if (!cue.storagePath) return;
     try {
-      const supabase = getSupabaseBrowser();
-      const { data: urlData, error: urlError } = await supabase.storage
-        .from('music')
-        .createSignedUrl(cue.storagePath, 60 * 60 * 24);
-      if (urlError || !urlData?.signedUrl) {
-        console.error('Failed to get signed URL for music cue:', urlError);
-        return;
-      }
-      const signedUrl = urlData.signedUrl;
+      const audioProxyUrl = `/api/music/${cue.id}/audio`;
       const sourceId = `music-cue-${cue.id}`;
       importSources(
-        [{ id: sourceId, fileName: `music_${cue.mood}_${cue.id}.mp3`, duration: cue.durationSeconds, isPrimary: false, runtime: { objectUrl: signedUrl, playerUrl: signedUrl } }],
+        [{ id: sourceId, fileName: `music_${cue.mood}_${cue.id}.mp3`, duration: cue.durationSeconds, isPrimary: false, runtime: { objectUrl: audioProxyUrl, playerUrl: audioProxyUrl } }],
         { shouldAppendClips: false },
       );
       const clipId = uuidv4();
