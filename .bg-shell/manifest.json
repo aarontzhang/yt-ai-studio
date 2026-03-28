@@ -1,16 +1,30 @@
 [
   {
-    "id": "3afde002",
+    "id": "29735573",
+    "label": "worktree-dev-3003",
+    "command": "cd /Users/felixpeng/Downloads/repos/yt-ai-studio-v2-working && npx next dev --webpack -p 3003",
+    "cwd": "/Users/felixpeng/Downloads/repos/yt-ai-studio-v2",
+    "ownerSessionFile": "/Users/felixpeng/.gsd/sessions/--Users-felixpeng-Downloads-repos-yt-ai-studio-v2--/2026-03-28T08-28-48-346Z_fdb6f0e7-c5fa-4e6f-97b9-231e46d9798b.jsonl",
+    "persistAcrossSessions": false,
+    "startedAt": 1774694116897,
+    "processType": "server",
+    "group": null,
+    "readyPattern": null,
+    "readyPort": 3003,
+    "pid": 36925
+  },
+  {
+    "id": "b340c614",
     "label": "next-dev-3002",
     "command": "cd /Users/felixpeng/Downloads/repos/yt-ai-studio-v2 && npx next dev --webpack -p 3002",
     "cwd": "/Users/felixpeng/Downloads/repos/yt-ai-studio-v2",
     "ownerSessionFile": "/Users/felixpeng/.gsd/sessions/--Users-felixpeng-Downloads-repos-yt-ai-studio-v2--/2026-03-28T08-28-48-346Z_fdb6f0e7-c5fa-4e6f-97b9-231e46d9798b.jsonl",
     "persistAcrossSessions": false,
-    "startedAt": 1774693914798,
+    "startedAt": 1774694471523,
     "processType": "server",
     "group": null,
     "readyPattern": null,
     "readyPort": 3002,
-    "pid": 34214
+    "pid": 41788
   }
 ]
