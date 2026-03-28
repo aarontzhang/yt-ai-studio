@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { type Project } from '@/app/projects/page';
 import YTShell from '@/components/shell/YTShell';
 import VideoTable from '@/components/content/VideoTable';
+import YTUploadModal from '@/components/content/YTUploadModal';
 
 const TABS = [
   'Inspiration',
@@ -116,8 +117,7 @@ export default function ChannelContentPage() {
       {/* Video table */}
       <VideoTable projects={projects} loading={loading} />
 
-      {/* YTUploadModal renders here — Plan 02 */}
-      {uploadOpen && null}
+      <YTUploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
     </YTShell>
   );
 }
