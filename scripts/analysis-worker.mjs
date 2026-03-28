@@ -16,7 +16,7 @@
  *
  * Optional:
  *   GEMINI_CLASSIFICATION_MODEL  (default: gemini-2.5-flash)
- *   LYRIA_MODEL                  (default: lyria-realtime-exp)
+ *   LYRIA_MODEL                  (default: lyria-3-clip-preview)
  *   WORKER_POLL_INTERVAL_MS      (default: 5000)
  *   WORKER_CONCURRENCY           (default: 2)
  */
@@ -53,7 +53,7 @@ const POLL_INTERVAL_MS = Number(process.env.WORKER_POLL_INTERVAL_MS ?? 5000);
 const CONCURRENCY = Number(process.env.WORKER_CONCURRENCY ?? 1);
 const WORKER_ID = `worker-${randomUUID().slice(0, 8)}`;
 const GEMINI_MODEL = process.env.GEMINI_CLASSIFICATION_MODEL?.trim() || 'gemini-2.5-flash';
-const LYRIA_MODEL = process.env.LYRIA_MODEL?.trim() || 'lyria-003';
+const LYRIA_MODEL = process.env.LYRIA_MODEL?.trim() || 'lyria-3-clip-preview';
 
 if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY) {
   console.error('Missing NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY');
@@ -310,12 +310,7 @@ async function generateMusicCue(segment, apiKey) {
     body: JSON.stringify({
       contents: [{ parts: [{ text: buildMusicPrompt(segment) }] }],
       generationConfig: {
-        response_modalities: ['AUDIO'],
-        speech_config: {
-          voice_config: {
-            prebuilt_voice_config: { voice_name: 'Leda' },
-          },
-        },
+        response_modalities: ['AUDIO', 'TEXT'],
       },
     }),
   });
@@ -326,11 +321,16 @@ async function generateMusicCue(segment, apiKey) {
   }
 
   const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts;
-  if (!parts || parts.length === 0) throw new Error('Lyria returned no audio content');
+  const candidate = data?.candidates?.[0];
+  const parts = candidate?.content?.parts;
+  if (!parts || parts.length === 0) {
+    throw new Error(candidate?.finishMessage || 'Lyria returned no audio content');
+  }
 
   const audioPart = parts.find((p) => p.inlineData?.mimeType?.startsWith('audio/'));
-  if (!audioPart?.inlineData) throw new Error('Lyria response contains no audio data');
+  if (!audioPart?.inlineData) {
+    throw new Error(candidate?.finishMessage || 'Lyria response contains no audio data');
+  }
 
   return {
     audioBase64: audioPart.inlineData.data,

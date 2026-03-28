@@ -9,7 +9,7 @@ function getApiKey(): string {
 }
 
 function getModel(): string {
-  return process.env.LYRIA_MODEL?.trim() || 'lyria-003';
+  return process.env.LYRIA_MODEL?.trim() || 'lyria-3-clip-preview';
 }
 
 const MOOD_DESCRIPTIONS: Record<MusicMood, string> = {
@@ -62,14 +62,7 @@ export async function generateMusicCue(
   const body = {
     contents: [{ parts: [{ text: prompt }] }],
     generationConfig: {
-      response_modalities: ['AUDIO'],
-      speech_config: {
-        voice_config: {
-          prebuilt_voice_config: {
-            voice_name: 'Leda',
-          },
-        },
-      },
+      response_modalities: ['AUDIO', 'TEXT'],
     },
   };
 
@@ -85,9 +78,13 @@ export async function generateMusicCue(
   }
 
   const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts;
+  const candidate = data?.candidates?.[0];
+  const parts = candidate?.content?.parts;
   if (!parts || parts.length === 0) {
-    throw new Error('Lyria returned no audio content');
+    const finishMessage = typeof candidate?.finishMessage === 'string'
+      ? candidate.finishMessage
+      : null;
+    throw new Error(finishMessage || 'Lyria returned no audio content');
   }
 
   const audioPart = parts.find(
@@ -95,7 +92,10 @@ export async function generateMusicCue(
     (p: any) => p.inlineData?.mimeType?.startsWith('audio/'),
   );
   if (!audioPart?.inlineData) {
-    throw new Error('Lyria response contains no audio data');
+    const finishMessage = typeof candidate?.finishMessage === 'string'
+      ? candidate.finishMessage
+      : null;
+    throw new Error(finishMessage || 'Lyria response contains no audio data');
   }
 
   return {
