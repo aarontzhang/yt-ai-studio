@@ -45,8 +45,12 @@ Plans:
   2. Video table rows show 120x68px thumbnails, titles, and metadata in YouTube Studio styling with hover states
   3. Clicking "Create" in the top bar and then "Upload videos" opens a 540px upload modal with a drag-and-drop zone and terms of service text
   4. Dropping or selecting a video file triggers the existing upload flow and navigates to the editor
-**Plans**: TBD
+**Plans**: 2 plans
 **UI hint**: yes
+
+Plans:
+- [x] 02-01-PLAN.md — Shell wiring + ChannelContentPage with tabs and VideoTable (CONT-01, 02, 03, 04, 05)
+- [ ] 02-02-PLAN.md — YTUploadModal with drag-drop upload flow and ToS text (UPLD-01, 02, 03, CONT-05)
 
 ### Phase 3: Editor and Stepper
 **Goal**: The editor looks like YouTube Studio and the full demo flow runs end-to-end — from upload through AI editing, export, the 4-step post-export stepper, and the published dialog
@@ -68,6 +72,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Foundation | 2/3 | In Progress|  |
-| 2. Content and Upload | 0/TBD | Not started | - |
+| 1. Foundation | 3/3 | Complete |  |
+| 2. Content and Upload | 0/2 | Ready | - |
 | 3. Editor and Stepper | 0/TBD | Not started | - |
