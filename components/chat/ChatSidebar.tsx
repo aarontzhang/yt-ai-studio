@@ -465,7 +465,7 @@ function formatProgressSummary(params: {
   }
 
   return {
-    summary: `${percentLabel} • ${formatRemainingLabel(etaSeconds)}`,
+    summary: percentLabel,
     secondary: null,
   };
 }
@@ -2210,6 +2210,11 @@ function ProgressStatusCard({
 }) {
   const targetProgress = getProgressValue(progress);
   const isCompleted = tone === 'completed';
+  const maxProgressRef = useRef<number>(0);
+  if (!isCompleted && targetProgress !== null) {
+    maxProgressRef.current = Math.max(maxProgressRef.current, targetProgress);
+  }
+  const displayProgress = isCompleted ? 1 : (maxProgressRef.current || (targetProgress ?? 0.06));
 
   return (
     <div style={{
@@ -2257,7 +2262,7 @@ function ProgressStatusCard({
           boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04)',
         }}>
           <div style={{
-            width: `${Math.max((targetProgress ?? 0.06) * 100, 4)}%`,
+            width: `${Math.max(displayProgress * 100, 4)}%`,
             height: '100%',
             background: 'linear-gradient(90deg, rgba(33,212,255,0.78), rgba(125,211,252,1))',
             boxShadow: '0 0 18px rgba(33,212,255,0.22)',
@@ -2267,7 +2272,7 @@ function ProgressStatusCard({
       )}
       <LiveProgressSummary
         progress={progress}
-        targetProgress={targetProgress}
+        targetProgress={displayProgress}
         isCompleted={isCompleted}
         detail={detail}
         secondaryLabel={secondaryLabel}
@@ -2277,7 +2282,6 @@ function ProgressStatusCard({
 }
 
 function LiveProgressSummary({
-  progress,
   targetProgress,
   isCompleted,
   detail,
@@ -2289,51 +2293,9 @@ function LiveProgressSummary({
   detail?: string | null;
   secondaryLabel?: string | null;
 }) {
-  const [nowMs, setNowMs] = useState(0);
-  const [etaAnchor, setEtaAnchor] = useState<{ key: string; deadlineAtMs: number | null }>({
-    key: '',
-    deadlineAtMs: null,
-  });
-  const etaAnchorKey = `${detail ?? ''}|${isCompleted ? '1' : '0'}|${progress?.stage ?? ''}|${progress?.completed ?? ''}|${progress?.total ?? ''}|${progress?.etaSeconds ?? 'null'}`;
-
-  useEffect(() => {
-    const nextEtaSeconds = progress?.etaSeconds ?? null;
-    const timeoutId = window.setTimeout(() => {
-      setEtaAnchor({
-        key: etaAnchorKey,
-        deadlineAtMs: Number.isFinite(nextEtaSeconds) && (nextEtaSeconds ?? 0) >= 0 && !isCompleted && !detail
-          ? Date.now() + (Number(nextEtaSeconds) * 1000)
-          : null,
-      });
-      setNowMs(Date.now());
-    }, 0);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [detail, etaAnchorKey, isCompleted, progress?.etaSeconds]);
-
-  useEffect(() => {
-    if (etaAnchor.key !== etaAnchorKey || etaAnchor.deadlineAtMs === null || isCompleted || detail) return;
-
-    const updateNow = () => {
-      setNowMs(Date.now());
-    };
-    const intervalId = window.setInterval(() => {
-      updateNow();
-    }, 1000);
-
-    return () => {
-      window.clearInterval(intervalId);
-    };
-  }, [detail, etaAnchor.deadlineAtMs, etaAnchor.key, etaAnchorKey, isCompleted]);
-
-  const liveEtaSeconds = etaAnchor.key !== etaAnchorKey || etaAnchor.deadlineAtMs === null
-    ? (progress?.etaSeconds ?? null)
-    : Math.max(0, Math.ceil((etaAnchor.deadlineAtMs - nowMs) / 1000));
-
   const { summary, secondary } = formatProgressSummary({
     targetProgress,
     isCompleted,
-    etaSeconds: liveEtaSeconds,
     detail,
     secondaryLabel,
   });
