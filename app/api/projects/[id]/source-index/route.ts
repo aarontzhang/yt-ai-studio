@@ -1,10 +1,8 @@
 import { NextResponse } from 'next/server';
 import { ensurePrimaryMediaAssetIfSupported } from '@/lib/analysisJobs';
 import { buildProjectSources, extractReferencedSourceIdsFromClips } from '@/lib/projectSources';
-import { buildSourceIndexAnalysis, parseAnalysisProgress, SourceIndexAnalysisJob } from '@/lib/server/sourceIndexAnalysis';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import type {
-  AnalysisJobStatus,
   CaptionEntry,
   ProjectSource,
   SourceIndexState,
@@ -23,15 +21,6 @@ type AssetLookupRow = {
   storage_path: string;
   status: ProjectSource['status'];
   indexed_at: string | null;
-};
-
-type AnalysisJobRow = {
-  id: string;
-  asset_id: string;
-  status: AnalysisJobStatus;
-  error: string | null;
-  progress: unknown;
-  pause_requested: boolean;
 };
 
 async function loadProjectAndSources(projectId: string, userId: string) {
@@ -63,8 +52,6 @@ async function buildSourceIndexResponse(projectId: string, userId: string) {
     return {
       sourceTranscriptCaptions: [],
       sourceIndexFreshBySourceId: {},
-      analysis: null,
-      analysisBySourceId: {},
       sources: [],
     };
   }
@@ -125,54 +112,30 @@ async function buildSourceIndexResponse(projectId: string, userId: string) {
   }
 
   const assetIds = Array.from(assetIdToSourceId.keys());
-  const latestJobsByAssetId = new Map<string, SourceIndexAnalysisJob>();
-  let transcriptRows: Array<{
+  if (assetIds.length === 0) {
+    return {
+      sourceTranscriptCaptions: [],
+      sourceIndexFreshBySourceId,
+      sources: normalizedSources,
+    };
+  }
+
+  const { data: transcriptRows, error: transcriptError } = await supabase
+    .from('asset_transcript_words')
+    .select('asset_id, start_time, end_time, text')
+    .in('asset_id', assetIds)
+    .order('start_time', { ascending: true });
+
+  if (transcriptError) throw transcriptError;
+
+  const sourceTranscriptCaptions: CaptionEntry[] = ((transcriptRows ?? []) as Array<{
     asset_id: string;
     start_time: number;
     end_time: number;
     text: string;
-  }> = [];
-
-  if (assetIds.length > 0) {
-    const [{ data: transcriptData, error: transcriptError }, { data: analysisJobRows, error: analysisJobError }] = await Promise.all([
-      supabase
-        .from('asset_transcript_words')
-        .select('asset_id, start_time, end_time, text')
-        .in('asset_id', assetIds)
-        .order('start_time', { ascending: true }),
-      supabase
-        .from('analysis_jobs')
-        .select('id, asset_id, status, error, progress, pause_requested')
-        .eq('project_id', projectId)
-        .eq('job_type', 'index_asset')
-        .in('asset_id', assetIds)
-        .order('created_at', { ascending: false }),
-    ]);
-
-    if (transcriptError) throw transcriptError;
-    if (analysisJobError) throw analysisJobError;
-
-    transcriptRows = (transcriptData ?? []) as typeof transcriptRows;
-
-    for (const row of (analysisJobRows ?? []) as AnalysisJobRow[]) {
-      if (!row.asset_id || latestJobsByAssetId.has(row.asset_id)) continue;
-      latestJobsByAssetId.set(row.asset_id, {
-        id: String(row.id),
-        assetId: String(row.asset_id),
-        status: row.status,
-        error: typeof row.error === 'string' ? row.error : null,
-        progress: parseAnalysisProgress(row.progress),
-        pauseRequested: row.pause_requested === true,
-      });
-    }
-  }
-
-  const transcriptCountByAssetId = new Map<string, number>();
-
-  const sourceTranscriptCaptions: CaptionEntry[] = transcriptRows.flatMap((row) => {
+  }>).flatMap((row) => {
     const sourceId = assetIdToSourceId.get(row.asset_id);
     if (!sourceId) return [];
-    transcriptCountByAssetId.set(row.asset_id, (transcriptCountByAssetId.get(row.asset_id) ?? 0) + 1);
     sourceIndexFreshBySourceId[sourceId] = {
       ...sourceIndexFreshBySourceId[sourceId],
       transcript: true,
@@ -185,17 +148,9 @@ async function buildSourceIndexResponse(projectId: string, userId: string) {
     }];
   });
 
-  const { analysis, analysisBySourceId } = buildSourceIndexAnalysis({
-    sources: normalizedSources,
-    latestJobsByAssetId,
-    transcriptCountByAssetId,
-  });
-
   return {
     sourceTranscriptCaptions,
     sourceIndexFreshBySourceId,
-    analysis,
-    analysisBySourceId,
     sources: normalizedSources,
   };
 }

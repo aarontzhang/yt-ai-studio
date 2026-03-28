@@ -4,7 +4,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { useEditorStore } from '@/lib/useEditorStore';
 import { ensureMusicGenerationJob, fetchMusicCues, getLatestMusicJobForAsset, updateMusicCueStatus } from '@/lib/musicJobs';
-import { getMusicCueFileName } from '@/lib/musicCueUtils';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 import type { MusicCue } from '@/lib/types';
 
@@ -243,7 +242,7 @@ export default function MusicPanel() {
       const signedUrl = urlData.signedUrl;
       const sourceId = `music-cue-${cue.id}`;
       importSources(
-        [{ id: sourceId, fileName: getMusicCueFileName(cue), duration: cue.durationSeconds, isPrimary: false, runtime: { objectUrl: signedUrl, playerUrl: signedUrl } }],
+        [{ id: sourceId, fileName: `music_${cue.mood}_${cue.id}.mp3`, duration: cue.durationSeconds, isPrimary: false, runtime: { objectUrl: signedUrl, playerUrl: signedUrl } }],
         { shouldAppendClips: false },
       );
       const clipId = uuidv4();

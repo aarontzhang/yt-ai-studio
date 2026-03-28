@@ -139,10 +139,11 @@ export async function POST(request: NextRequest) {
           ? { ...seg, genreHints: [musicPrompt, ...seg.genreHints].slice(0, 3) }
           : seg;
 
-        const { audioBase64, mimeType, extension } = await generateMusicCue(segWithHints);
+        const { audioBase64, mimeType } = await generateMusicCue(segWithHints);
 
         // Upload to Supabase storage
-        storagePath = `${projectId}/${cueId}.${extension}`;
+        const ext = mimeType.includes('wav') ? 'wav' : 'mp3';
+        storagePath = `${projectId}/${cueId}.${ext}`;
         const buffer = Buffer.from(audioBase64, 'base64');
 
         const { error: uploadError } = await admin.storage

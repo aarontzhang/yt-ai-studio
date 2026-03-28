@@ -35,12 +35,6 @@ const SEEK_EPSILON = 1 / 120;
 const DRIFT_EPSILON = 1 / 45;
 const PRELOAD_SEEK_EPSILON = 1 / 12; // ≈83ms — wider than one frame at 24fps, prevents re-seek loop
 const SAME_SOURCE_HANDOFF_PRELOAD_WINDOW = 2.0;
-const MEDIA_ERROR_NAMES: Record<number, string> = {
-  1: 'aborted',
-  2: 'network',
-  3: 'decode',
-  4: 'not_supported',
-};
 
 type VideoFrameRequestCallback = (now: number, metadata: unknown) => void;
 type VideoWithFrameCallback = HTMLVideoElement & {
@@ -53,9 +47,6 @@ type PendingLayerSourceState = {
   sourceId: string | null;
   clipId: string | null;
   url: string | null;
-};
-type AudioWithDiagnostics = HTMLAudioElement & {
-  __bgmDiagnosticsAttached?: boolean;
 };
 
 function fitVideoFrame(
@@ -128,39 +119,6 @@ function ensureVideoElementSource(video: HTMLVideoElement, nextUrl: string) {
   video.src = nextUrl;
   video.load();
   return true;
-}
-
-function describeAudioError(audio: HTMLAudioElement) {
-  const errorCode = audio.error?.code ?? 0;
-  return {
-    code: errorCode || null,
-    name: errorCode ? (MEDIA_ERROR_NAMES[errorCode] ?? 'unknown') : null,
-    currentSrc: audio.currentSrc || audio.src || null,
-    networkState: audio.networkState,
-    readyState: audio.readyState,
-  };
-}
-
-function attachMusicCueDiagnostics(audio: HTMLAudioElement, sourceId: string) {
-  const audioWithDiagnostics = audio as AudioWithDiagnostics;
-  if (audioWithDiagnostics.__bgmDiagnosticsAttached) return;
-  audioWithDiagnostics.__bgmDiagnosticsAttached = true;
-
-  audio.addEventListener('error', () => {
-    console.warn('[BGM] audio element error:', {
-      sourceId,
-      ...describeAudioError(audio),
-    });
-  });
-
-  audio.addEventListener('stalled', () => {
-    console.warn('[BGM] audio element stalled:', {
-      sourceId,
-      currentSrc: audio.currentSrc || audio.src || null,
-      networkState: audio.networkState,
-      readyState: audio.readyState,
-    });
-  });
 }
 
 function clearVideoElementSource(video: HTMLVideoElement | null) {
@@ -630,7 +588,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
         audio = new Audio();
         audio.preload = 'auto';
         audio.src = url;
-        attachMusicCueDiagnostics(audio, clip.sourceId);
         musicAudioBySourceIdRef.current.set(clip.sourceId, audio);
       }
 
@@ -653,12 +610,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
         if (audio.paused) {
           audio.play().catch((e: unknown) => {
             if (e instanceof Error && e.name !== 'AbortError') {
-              console.warn('[BGM] play failed:', {
-                sourceId: clip.sourceId,
-                errorName: e.name,
-                message: e.message,
-                ...describeAudioError(audio),
-              });
+              console.warn('[BGM] play failed:', e.name, e.message);
             }
           });
         }
@@ -679,7 +631,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
           const audio = new Audio();
           audio.preload = 'auto';
           audio.src = url;
-          attachMusicCueDiagnostics(audio, clip.sourceId);
           musicAudioBySourceIdRef.current.set(clip.sourceId, audio);
         }
       }
@@ -934,7 +885,6 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
   useEffect(() => {
     const primaryVideo = getLeadVideo();
     if (!primaryVideo) return;
-    const musicAudios = musicAudioBySourceIdRef.current;
     const syncTimelineFromMedia = () => {
       playbackTickRef.current();
     };
@@ -969,7 +919,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
       cancelPlaybackMonitor();
       pauseInactiveVideo();
       setPlaybackActive(false);
-      for (const audio of musicAudios.values()) {
+      for (const audio of musicAudioBySourceIdRef.current.values()) {
         audio.pause();
         audio.volume = 0;
       }
