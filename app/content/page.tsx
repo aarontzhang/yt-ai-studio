@@ -2,36 +2,32 @@
 
 import YTShell from '@/components/shell/YTShell';
 import ChannelContentPage from '@/components/content/ChannelContentPage';
-import UploadModal from '@/components/content/UploadModal';
 import VideoDetailsModal from '@/components/content/VideoDetailsModal';
 import VideoPublishedDialog from '@/components/content/VideoPublishedDialog';
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Suspense } from 'react';
 
 function ContentPageInner() {
-  const [uploadOpen, setUploadOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [publishedOpen, setPublishedOpen] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Auto-open stepper if coming from export
   useEffect(() => {
     if (searchParams.get('stepper') === 'open') {
-      // Defer state update to avoid synchronous setState in effect
       const timer = setTimeout(() => setDetailsOpen(true), 0);
-      // Clean up the URL without triggering navigation
       window.history.replaceState(null, '', '/content');
       return () => clearTimeout(timer);
     }
   }, [searchParams]);
 
   return (
-    <YTShell onUploadClick={() => setUploadOpen(true)}>
+    <YTShell onUploadClick={() => router.push('/projects')}>
       <ChannelContentPage
         onOpenDetails={() => setDetailsOpen(true)}
       />
-      <UploadModal open={uploadOpen} onClose={() => setUploadOpen(false)} />
       <VideoDetailsModal
         open={detailsOpen}
         onClose={() => {
