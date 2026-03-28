@@ -15,6 +15,7 @@
     "@ffmpeg/core-st": "^0.11.1",
     "@ffmpeg/ffmpeg": "^0.12.15",
     "@ffmpeg/util": "^0.12.2",
+    "@material-symbols-svg/react": "^0.3.0",
     "@supabase/ssr": "^0.9.0",
     "@supabase/supabase-js": "^2.98.0",
     "@types/uuid": "^10.0.0",
@@ -22,7 +23,7 @@
     "jpeg-js": "^0.4.4",
     "next": "16.1.6",
     "openai": "^6.25.0",
-"react": "19.2.3",
+    "react": "19.2.3",
     "react-dom": "19.2.3",
     "uuid": "^13.0.0",
     "zustand": "^5.0.11"
