@@ -1,6 +1,15 @@
-# Autocut
+# YouTube AI Studio
 
-Autocut is a Next.js video editor with Supabase-backed auth/storage, browser-side FFmpeg editing, OpenAI transcription, Anthropic-powered assistant flows, and a background worker for source-video indexing.
+A hackathon demo that embeds AI-powered video editing directly into the YouTube Creator Studio upload workflow. The app reskins a full-featured timeline editor to look and feel indistinguishable from YouTube Studio, inserting an intelligent AI editing step between video upload and the standard publish flow — showing what a native AI editor inside YouTube Studio could look like.
+
+## What It Does
+
+- **AI-assisted editing** — Chat with Claude to cut, reorder, adjust speed/volume, add captions, and remove silences using natural language
+- **Timeline editor** — Non-destructive clip-based editing with undo/redo, split/delete/reorder, color filters, fade effects, and transitions
+- **Transcription** — OpenAI Whisper word-level transcription with silence detection and filler word tagging
+- **Visual indexing** — Frame extraction, scene detection, and embedding-based visual search
+- **In-browser export** — FFmpeg WASM renders the final video entirely in the browser (no server-side transcoding)
+- **YouTube Studio UI** — Matches YouTube Creator Studio visually; post-editor stepper pages (Details → Visibility) are present as visual mockups
 
 ## Local Development
 
@@ -18,7 +27,7 @@ npm ci
 npm run dev
 ```
 
-5. Start the optional indexing worker in a second shell if you want visual search/indexing locally:
+5. Start the optional indexing worker in a second shell if you want transcription/visual search locally:
 
 ```bash
 npm run worker:analysis
@@ -54,61 +63,64 @@ Optional tuning:
 
 Run the SQL migrations in `supabase/migrations/` against a fresh Supabase project. They create:
 
-- `projects`
-- visual-indexing tables and job queue tables
-- `beta_usage_daily`
-- the private `videos` storage bucket
-- RLS policies for projects, storage objects, and beta usage
-- the `consume_beta_usage` RPC used by the public-beta guardrails
+- `projects` — user projects with edit state stored as JSONB
+- `media_assets`, `analysis_jobs` — video file metadata and background processing queue
+- `asset_scenes`, `asset_transcript_words`, `asset_visual_index` — indexing output tables
+- `beta_usage_daily` — per-user daily usage tracking
+- `storage_uploads` — quota enforcement
+- `waitlist` — beta access list
+- The private `videos` storage bucket with per-user path isolation
+- RLS policies for all tables and storage objects
+- The `consume_beta_usage` RPC used by public-beta guardrails
 
 Auth configuration:
 
-- Set the Supabase site URL to your Vercel deployment URL.
+- Set the Supabase site URL to your deployment URL.
 - Add `${YOUR_APP_URL}/auth/callback` as an additional redirect URL.
 - Enable Google provider if you want Google login.
-- If email confirmation stays enabled, the UI now shows a check-your-email state after signup instead of assuming immediate login.
+
+## Tech Stack
+
+- **Next.js 16** (App Router) + **React 19** + **TypeScript**
+- **Zustand 5** — monolithic editor store (~2400 lines, ~180 state fields)
+- **Tailwind CSS 4** — dark theme only; most styling done via inline styles and CSS variables
+- **FFmpeg WASM** (`@ffmpeg/ffmpeg`) — in-browser video export via WebAssembly
+- **Anthropic Claude** (`claude-sonnet-4-6`) — AI editing assistant
+- **OpenAI Whisper** — audio transcription with word-level timestamps
+- **Supabase** — auth (SSR), PostgreSQL, object storage
+
+> Dev and prod both use `--webpack` because Turbopack breaks FFmpeg WASM loading.
 
 ## Deployment
 
 ### Web app
 
-Deploy the repo to Vercel as a standard Next.js project.
+Deploy to Vercel as a standard Next.js project.
 
 - Build command: `npm run build`
-- Output: standard Next.js server deployment
-- Production build uses Webpack because the current Turbopack production path crashes in this repo
-
-Set all server environment variables in Vercel. `SUPABASE_SERVICE_ROLE_KEY` must remain server-only.
+- Set all server environment variables in Vercel; `SUPABASE_SERVICE_ROLE_KEY` must remain server-only.
 
 ### Worker
 
-Deploy a separate always-on worker service from `Dockerfile.worker`.
+Deploy a separate always-on service from `Dockerfile.worker`.
 
 - Start command: `npm run worker:analysis`
-- Required system dependency: `ffmpeg` and `ffprobe` are installed in the image
-- The worker now auto-sizes its process slot count from host CPU capacity when `ANALYSIS_WORKER_CONCURRENCY` is unset.
-- Each indexing job also fans out internally:
-  frame extraction is sharded across `ANALYSIS_INDEX_SEGMENT_CONCURRENCY` FFmpeg workers and frame-description batches are sent with `ANALYSIS_INDEX_DESCRIPTION_CONCURRENCY`.
-- `ANALYSIS_INDEX_SHARD_SECONDS` controls how much video each FFmpeg shard handles before the next shard is launched.
-- Recommended starting point on a small instance: `ANALYSIS_WORKER_CONCURRENCY=2`, `ANALYSIS_INDEX_SEGMENT_CONCURRENCY=2`, `ANALYSIS_INDEX_DESCRIPTION_CONCURRENCY=2`.
-
-Any container host that supports long-running Node processes works here.
+- Requires `ffmpeg` and `ffprobe` — installed in the Docker image
+- Auto-sizes concurrency from host CPU when `ANALYSIS_WORKER_CONCURRENCY` is unset
+- Recommended starting point on a small instance: `ANALYSIS_WORKER_CONCURRENCY=2`, `ANALYSIS_INDEX_SEGMENT_CONCURRENCY=2`, `ANALYSIS_INDEX_DESCRIPTION_CONCURRENCY=2`
+- `ANALYSIS_INDEX_SHARD_SECONDS` controls how much video each FFmpeg shard handles
 
 ## Verification
-
-Run these checks before shipping:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-Then verify:
+Then verify end-to-end:
 
-- email signup/login
-- Google OAuth callback
-- video upload and project creation
-- transcription
-- frame descriptions
-- source indexing jobs moving from queued to completed
-- rate limits returning `429` once daily caps are reached
+- Email signup/login and Google OAuth callback
+- Video upload and project creation
+- Transcription and frame descriptions
+- Source indexing jobs moving from `queued` → `completed`
+- Rate limits returning `429` once daily caps are reached
