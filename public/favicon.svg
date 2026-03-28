@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="64" height="64">
+  <rect x="1" y="1" width="22" height="22" rx="6" fill="#0A0A0A"/>
+  <defs>
+    <path id="chevron" d="M0 0L4.6 3.2L0 6.4" fill="none"/>
+    <clipPath id="left-flush-clip">
+      <rect x="5.35" y="4.1" width="14.6" height="16"/>
+    </clipPath>
+    <clipPath id="right-chevron-left-flush">
+      <rect x="11.15" y="8.2" width="8.8" height="8.1"/>
+    </clipPath>
+  </defs>
+  <g clip-path="url(#left-flush-clip)" transform="translate(1.45 0.2)" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="butt" stroke-linejoin="miter">
+    <use href="#chevron" transform="translate(4.7 4.9)"/>
+    <use href="#chevron" transform="translate(4.7 12.7)"/>
+  </g>
+  <g clip-path="url(#right-chevron-left-flush)" transform="translate(1.45 0.2)" fill="none" stroke="#FFFFFF" stroke-width="1.4" stroke-linecap="butt" stroke-linejoin="miter">
+    <use href="#chevron" transform="translate(10.45 8.8)"/>
+  </g>
+</svg>

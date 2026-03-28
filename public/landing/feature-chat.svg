@@ -1,0 +1,43 @@
+<svg width="1200" height="780" viewBox="0 0 1200 780" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="780" rx="32" fill="#101010"/>
+  <rect x="34" y="34" width="1132" height="712" rx="28" fill="#141414" stroke="#FFFFFF" stroke-opacity="0.1"/>
+  <rect x="70" y="94" width="286" height="572" rx="28" fill="#121212" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <rect x="106" y="132" width="214" height="126" rx="22" fill="url(#cmd)" stroke="#2AE0FF" stroke-opacity="0.24"/>
+  <text fill="#F8FBFF" font-family="Arial, sans-serif" font-size="28" font-weight="700">
+    <tspan x="136" y="190">“Tighten</tspan>
+    <tspan x="136" y="224">the intro.”</tspan>
+  </text>
+  <rect x="106" y="294" width="214" height="86" rx="18" fill="#1B1B1B"/>
+  <rect x="106" y="398" width="214" height="86" rx="18" fill="#1B1B1B"/>
+  <rect x="106" y="502" width="214" height="86" rx="18" fill="#1B1B1B"/>
+  <rect x="398" y="92" width="730" height="434" rx="30" fill="url(#panel)" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="44" font-weight="700">
+    <tspan x="452" y="164">Edit with natural</tspan>
+    <tspan x="452" y="214">language.</tspan>
+  </text>
+  <text fill="#FFFFFF" fill-opacity="0.68" font-family="Arial, sans-serif" font-size="24">
+    <tspan x="452" y="274">Chat requests become concrete</tspan>
+    <tspan x="452" y="308">timeline changes.</tspan>
+  </text>
+  <rect x="452" y="350" width="262" height="24" rx="12" fill="#67E8FF"/>
+  <rect x="732" y="350" width="192" height="24" rx="12" fill="#149BFF"/>
+  <rect x="942" y="350" width="134" height="24" rx="12" fill="#18ACFF"/>
+  <rect x="452" y="396" width="218" height="24" rx="12" fill="#F59E0B"/>
+  <rect x="688" y="396" width="286" height="24" rx="12" fill="#149BFF"/>
+  <rect x="992" y="396" width="92" height="24" rx="12" fill="#F59E0B"/>
+  <rect x="398" y="558" width="730" height="108" rx="24" fill="#171717" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="32" font-weight="700">
+    <tspan x="452" y="621">Review the result in the</tspan>
+    <tspan x="452" y="659">same workspace.</tspan>
+  </text>
+  <defs>
+    <linearGradient id="cmd" x1="213" y1="132" x2="213" y2="258" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2AE0FF" stop-opacity="0.24"/>
+      <stop offset="1" stop-color="#2AE0FF" stop-opacity="0.08"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="763" y1="92" x2="763" y2="526" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111B2A"/>
+      <stop offset="1" stop-color="#0B1019"/>
+    </linearGradient>
+  </defs>
+</svg>

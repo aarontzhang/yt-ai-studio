@@ -1,0 +1,43 @@
+<svg width="1200" height="780" viewBox="0 0 1200 780" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="780" rx="32" fill="#101010"/>
+  <rect x="34" y="34" width="1132" height="712" rx="28" fill="#141414" stroke="#FFFFFF" stroke-opacity="0.1"/>
+  <rect x="94" y="96" width="1012" height="332" rx="28" fill="url(#top)" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="44" font-weight="700">
+    <tspan x="138" y="170">Captions, timing,</tspan>
+    <tspan x="138" y="220">and export.</tspan>
+  </text>
+  <text fill="#FFFFFF" fill-opacity="0.68" font-family="Arial, sans-serif" font-size="24">
+    <tspan x="138" y="280">Stay inside the edit instead of bouncing</tspan>
+    <tspan x="138" y="312">between disconnected tools.</tspan>
+  </text>
+  <rect x="138" y="348" width="208" height="20" rx="10" fill="#F59E0B"/>
+  <rect x="360" y="348" width="286" height="20" rx="10" fill="#67E8FF"/>
+  <rect x="662" y="348" width="148" height="20" rx="10" fill="#149BFF"/>
+  <rect x="826" y="348" width="92" height="20" rx="10" fill="#18ACFF"/>
+  <rect x="94" y="462" width="652" height="224" rx="28" fill="#171717" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <rect x="790" y="462" width="316" height="224" rx="28" fill="#171717" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <text x="138" y="530" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="34" font-weight="700">Timeline review</text>
+  <rect x="138" y="572" width="176" height="18" rx="9" fill="#67E8FF"/>
+  <rect x="328" y="572" width="126" height="18" rx="9" fill="#149BFF"/>
+  <rect x="468" y="572" width="220" height="18" rx="9" fill="#F59E0B"/>
+  <rect x="138" y="610" width="122" height="14" rx="7" fill="#18ACFF"/>
+  <rect x="274" y="610" width="250" height="14" rx="7" fill="#18ACFF"/>
+  <rect x="538" y="610" width="96" height="14" rx="7" fill="#18ACFF"/>
+  <text x="834" y="530" fill="#FFFFFF" font-family="Arial, sans-serif" font-size="34" font-weight="700">Export queue</text>
+  <rect x="834" y="570" width="228" height="48" rx="24" fill="url(#btn)" stroke="#FFFFFF" stroke-opacity="0.28"/>
+  <text x="884" y="601" fill="#08111F" font-family="Arial, sans-serif" font-size="24" font-weight="700">Export MP4</text>
+  <text fill="#FFFFFF" fill-opacity="0.68" font-family="Arial, sans-serif" font-size="22">
+    <tspan x="834" y="652">Captions attached.</tspan>
+    <tspan x="834" y="682">Timing locked.</tspan>
+  </text>
+  <defs>
+    <linearGradient id="top" x1="600" y1="96" x2="600" y2="428" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#111B2A"/>
+      <stop offset="1" stop-color="#0B1019"/>
+    </linearGradient>
+    <linearGradient id="btn" x1="948" y1="570" x2="948" y2="618" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#DFFBFF"/>
+    </linearGradient>
+  </defs>
+</svg>

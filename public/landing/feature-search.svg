@@ -1,0 +1,45 @@
+<svg width="1200" height="780" viewBox="0 0 1200 780" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="780" rx="32" fill="#101010"/>
+  <rect x="34" y="34" width="1132" height="712" rx="28" fill="#141414" stroke="#FFFFFF" stroke-opacity="0.1"/>
+  <rect x="96" y="108" width="1008" height="92" rx="24" fill="#181818" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <rect x="138" y="136" width="492" height="34" rx="17" fill="url(#search)"/>
+  <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="24" font-weight="700">
+    <tspan x="170" y="160">Find the moment where the speaker opens</tspan>
+    <tspan x="170" y="188">the demo dashboard</tspan>
+  </text>
+  <circle cx="1032" cy="154" r="20" stroke="#FFFFFF" stroke-width="5"/>
+  <path d="M1048 170L1070 192" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+  <rect x="96" y="240" width="500" height="420" rx="28" fill="#171717" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <rect x="640" y="240" width="464" height="420" rx="28" fill="url(#player)" stroke="#FFFFFF" stroke-opacity="0.08"/>
+  <rect x="138" y="298" width="416" height="84" rx="20" fill="#1C1C1C"/>
+  <rect x="138" y="402" width="416" height="84" rx="20" fill="#1C1C1C"/>
+  <rect x="138" y="506" width="416" height="84" rx="20" fill="url(#hit)" stroke="#2AE0FF" stroke-opacity="0.2"/>
+  <text x="172" y="352" fill="#FFFFFF" fill-opacity="0.72" font-family="Arial, sans-serif" font-size="28">00:42 Talking head setup</text>
+  <text x="172" y="456" fill="#FFFFFF" fill-opacity="0.72" font-family="Arial, sans-serif" font-size="28">01:24 Product overview</text>
+  <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="28" font-weight="700">
+    <tspan x="172" y="559">02:08 Opens dashboard</tspan>
+    <tspan x="172" y="592">on-screen</tspan>
+  </text>
+  <text fill="#FFFFFF" font-family="Arial, sans-serif" font-size="40" font-weight="700">
+    <tspan x="680" y="322">Jump straight to</tspan>
+    <tspan x="680" y="370">the right scene.</tspan>
+  </text>
+  <rect x="680" y="406" width="258" height="22" rx="11" fill="#67E8FF"/>
+  <rect x="956" y="406" width="104" height="22" rx="11" fill="#18ACFF"/>
+  <rect x="680" y="446" width="170" height="22" rx="11" fill="#F59E0B"/>
+  <rect x="866" y="446" width="248" height="22" rx="11" fill="#149BFF"/>
+  <defs>
+    <linearGradient id="search" x1="384" y1="136" x2="384" y2="170" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#20313F"/>
+      <stop offset="1" stop-color="#1A252F"/>
+    </linearGradient>
+    <linearGradient id="player" x1="872" y1="240" x2="872" y2="660" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#122033"/>
+      <stop offset="1" stop-color="#091019"/>
+    </linearGradient>
+    <linearGradient id="hit" x1="346" y1="506" x2="346" y2="590" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2AE0FF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#2AE0FF" stop-opacity="0.08"/>
+    </linearGradient>
+  </defs>
+</svg>
