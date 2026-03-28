@@ -50,7 +50,7 @@ const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const LYRIA_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
 const POLL_INTERVAL_MS = Number(process.env.WORKER_POLL_INTERVAL_MS ?? 5000);
-const CONCURRENCY = Number(process.env.WORKER_CONCURRENCY ?? 2);
+const CONCURRENCY = Number(process.env.WORKER_CONCURRENCY ?? 1);
 const WORKER_ID = `worker-${randomUUID().slice(0, 8)}`;
 const GEMINI_MODEL = process.env.GEMINI_CLASSIFICATION_MODEL?.trim() || 'gemini-2.0-flash';
 const LYRIA_MODEL = process.env.LYRIA_MODEL?.trim() || 'lyria-realtime-exp';
@@ -355,19 +355,55 @@ async function processGenerateMusicJob(job) {
   if (!geminiKey) throw new Error('GOOGLE_GEMINI_API_KEY is not set');
   if (!lyriaKey) throw new Error('GOOGLE_LYRIA_API_KEY is not set');
 
-  // 1. Fetch SourceIndex for the asset
-  const { data: indexRow, error: indexError } = await supabase
-    .from('source_indexes')
-    .select('data')
-    .eq('asset_id', assetId)
+  // 1. Fetch SourceIndex from project edit_state (stored as JSON by the app)
+  const { data: projectRow, error: projectError } = await supabase
+    .from('projects')
+    .select('edit_state')
+    .eq('id', projectId)
     .maybeSingle();
 
-  if (indexError) throw indexError;
-  if (!indexRow?.data) throw new Error(`No source index found for asset ${assetId}`);
+  if (projectError) throw projectError;
 
-  const sourceIndex = indexRow.data;
-  const segments = sourceIndex.segments ?? [];
-  const scenes = sourceIndex.scenes ?? [];
+  const editState = projectRow?.edit_state ?? {};
+  // The full SourceIndex is persisted under edit_state.sourceIndex by the app
+  const sourceIndex = editState.sourceIndex ?? null;
+  const segments = sourceIndex?.segments ?? [];
+  const scenes = sourceIndex?.scenes ?? [];
+
+  // Fall back to building segments from asset_transcript_words if sourceIndex is absent
+  if (segments.length === 0) {
+    console.log(`[${jobId}] No segments in sourceIndex — checking asset_transcript_words…`);
+    const { data: words, error: wordsError } = await supabase
+      .from('asset_transcript_words')
+      .select('start_time, end_time, text')
+      .eq('asset_id', assetId)
+      .order('start_time', { ascending: true });
+
+    if (wordsError) throw wordsError;
+    if (!words || words.length === 0) throw new Error(`No transcript data found for asset ${assetId}. Run transcription first.`);
+
+    // Group words into ~sentence segments by pause gaps
+    const builtSegments = [];
+    let groupWords = [];
+    for (let i = 0; i < words.length; i++) {
+      groupWords.push(words[i]);
+      const nextWord = words[i + 1];
+      const gap = nextWord ? (nextWord.start_time - words[i].end_time) * 1000 : 9999;
+      const groupDuration = (words[i].end_time - groupWords[0].start_time);
+      if (gap > 800 || groupDuration > 15 || i === words.length - 1) {
+        builtSegments.push({
+          id: `seg_${i}`,
+          text: groupWords.map((w) => w.text).join(' '),
+          sourceStart: groupWords[0].start_time,
+          sourceEnd: groupWords[groupWords.length - 1].end_time,
+          sceneId: null,
+          pauseAfterMs: gap,
+        });
+        groupWords = [];
+      }
+    }
+    segments.push(...builtSegments);
+  }
 
   if (segments.length === 0) {
     console.log(`[${jobId}] No segments to classify, skipping music generation.`);
@@ -473,7 +509,7 @@ async function claimNextJobManual() {
   if (error) throw error;
   if (!data) return null;
 
-  const { error: updateError } = await supabase
+  const { data: updated, error: updateError } = await supabase
     .from('analysis_jobs')
     .update({
       status: 'running',
@@ -482,9 +518,10 @@ async function claimNextJobManual() {
       attempt_count: (data.attempt_count ?? 0) + 1,
     })
     .eq('id', data.id)
-    .eq('status', 'queued'); // optimistic lock
+    .eq('status', 'queued') // optimistic lock — only succeeds if still queued
+    .select('id');
 
-  if (updateError) return null; // Another worker claimed it
+  if (updateError || !updated || updated.length === 0) return null; // Another worker claimed it
   return data;
 }
 
