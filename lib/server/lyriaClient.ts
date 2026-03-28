@@ -78,9 +78,11 @@ export async function generateMusicCue(
   }
 
   const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts;
+  const candidate = data?.candidates?.[0];
+  const parts = candidate?.content?.parts;
   if (!parts || parts.length === 0) {
-    throw new Error('Lyria returned no audio content');
+    const reason = candidate?.finishReason ?? 'unknown';
+    throw new Error(`Lyria returned no audio content (finishReason: ${reason})`);
   }
 
   const audioPart = parts.find(

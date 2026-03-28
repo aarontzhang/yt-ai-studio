@@ -3037,7 +3037,7 @@ export default function ChatSidebar() {
       addMessage({ role: 'assistant', content: 'No video loaded. Please upload a video before generating music.' });
       return;
     }
-    addMessage({ role: 'user', content: '/music' });
+    addMessage({ role: 'user', content: 'add background music' });
     const assistantMsgId = addMessage({ role: 'assistant', content: '', musicGenerationStatus: 'generating' });
     try {
       const supabase = getSupabaseBrowser();
@@ -3052,10 +3052,12 @@ export default function ChatSidebar() {
         if (!jobState) return;
         if (jobState.status === 'completed' || jobState.status === 'failed') {
           if (musicPollRef.current) clearInterval(musicPollRef.current);
-          const cues = jobState.status === 'completed'
+          const allCues = jobState.status === 'completed'
             ? await fetchMusicCues(supabaseInner, currentProjectId)
             : [];
-          setMusicGeneration({ ...useEditorStore.getState().musicGeneration, status: jobState.status ?? 'completed', error: jobState.error ?? null, cues, progress: null });
+          // Omit cues where Lyria failed to produce audio (storagePath is null)
+          const cues = allCues.filter(c => c.storagePath !== null);
+          setMusicGeneration({ ...useEditorStore.getState().musicGeneration, status: jobState.status ?? 'completed', error: jobState.error ?? null, cues: allCues, progress: null });
           useEditorStore.getState().updateMessage(assistantMsgId, {
             musicGenerationStatus: jobState.status === 'completed' ? 'completed' : 'failed',
             musicCues: cues.length > 0 ? cues : undefined,
@@ -3074,7 +3076,7 @@ export default function ChatSidebar() {
     const text = input.trim();
     if (!text || isChatLoading || reviewLocked || !initialIndexingReady) return;
 
-    if (text.toLowerCase() === '/music') {
+    if (text.toLowerCase().includes('background music') || text.toLowerCase().includes('add music')) {
       setInput('');
       setActiveMarkerMention(null);
       if (textareaRef.current) textareaRef.current.style.height = 'auto';

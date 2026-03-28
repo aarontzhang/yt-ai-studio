@@ -311,11 +311,6 @@ async function generateMusicCue(segment, apiKey) {
       contents: [{ parts: [{ text: buildMusicPrompt(segment) }] }],
       generationConfig: {
         response_modalities: ['AUDIO'],
-        speech_config: {
-          voice_config: {
-            prebuilt_voice_config: { voice_name: 'Leda' },
-          },
-        },
       },
     }),
   });
@@ -326,8 +321,12 @@ async function generateMusicCue(segment, apiKey) {
   }
 
   const data = await res.json();
-  const parts = data?.candidates?.[0]?.content?.parts;
-  if (!parts || parts.length === 0) throw new Error('Lyria returned no audio content');
+  const candidate = data?.candidates?.[0];
+  const parts = candidate?.content?.parts;
+  if (!parts || parts.length === 0) {
+    const reason = candidate?.finishReason ?? 'unknown';
+    throw new Error(`Lyria returned no audio content (finishReason: ${reason})`);
+  }
 
   const audioPart = parts.find((p) => p.inlineData?.mimeType?.startsWith('audio/'));
   if (!audioPart?.inlineData) throw new Error('Lyria response contains no audio data');

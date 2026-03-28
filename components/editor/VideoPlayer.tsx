@@ -33,6 +33,7 @@ const CSS_FILTERS: Record<string, string> = {
 const END_EPSILON = 0.03;
 const SEEK_EPSILON = 1 / 120;
 const DRIFT_EPSILON = 1 / 45;
+const AUDIO_DRIFT_EPSILON = 0.15; // 150ms — audio needs no frame-accurate sync; tight values cause constant micro-seeks
 const PRELOAD_SEEK_EPSILON = 1 / 12; // ≈83ms — wider than one frame at 24fps, prevents re-seek loop
 const SAME_SOURCE_HANDOFF_PRELOAD_WINDOW = 2.0;
 
@@ -589,18 +590,18 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
         audio.preload = 'auto';
         audio.src = url;
         const newAudio = audio;
-        const onCanPlay = () => {
-          newAudio.removeEventListener('canplay', onCanPlay);
+        const onCanPlayThrough = () => {
+          newAudio.removeEventListener('canplaythrough', onCanPlayThrough);
           if (playbackIntentRef.current) {
             syncMusicLayers(currentTimeRef.current, { allowPlay: true });
           }
         };
-        newAudio.addEventListener('canplay', onCanPlay);
+        newAudio.addEventListener('canplaythrough', onCanPlayThrough);
         musicAudioBySourceIdRef.current.set(clip.sourceId, audio);
       }
 
       const sourceTime = clip.sourceOffset + (timelineTime - clip.timelineStart);
-      if (audio.readyState >= 2 && Math.abs(audio.currentTime - sourceTime) > DRIFT_EPSILON) {
+      if (audio.readyState >= 2 && Math.abs(audio.currentTime - sourceTime) > AUDIO_DRIFT_EPSILON) {
         audio.currentTime = Math.max(0, sourceTime);
       }
 
@@ -631,8 +632,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
   // Preload audio elements as soon as music clips are added so they are ready before playback
   // reaches the clip's start time. Without this, creating the element on the first active frame
   // and immediately seeking + calling play() triggers an AbortError on unloaded media.
-  // A canplay listener fires syncMusicLayers once the audio has buffered enough to play cleanly,
-  // ensuring play() is not called before readyState >= 2.
+  // A canplaythrough listener fires syncMusicLayers once the browser estimates it can play
+  // without buffering interruptions, preventing choppy start from seeking to unbuffered positions.
   useEffect(() => {
     for (const clip of musicClips) {
       if (!musicAudioBySourceIdRef.current.has(clip.sourceId)) {
@@ -641,13 +642,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
           const audio = new Audio();
           audio.preload = 'auto';
           audio.src = url;
-          const onCanPlay = () => {
-            audio.removeEventListener('canplay', onCanPlay);
+          const onCanPlayThrough = () => {
+            audio.removeEventListener('canplaythrough', onCanPlayThrough);
             if (playbackIntentRef.current) {
               syncMusicLayers(currentTimeRef.current, { allowPlay: true });
             }
           };
-          audio.addEventListener('canplay', onCanPlay);
+          audio.addEventListener('canplaythrough', onCanPlayThrough);
           musicAudioBySourceIdRef.current.set(clip.sourceId, audio);
         }
       }
