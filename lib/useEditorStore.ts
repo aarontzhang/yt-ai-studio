@@ -19,6 +19,8 @@ import {
   SourceIndexTaskState,
   SourceIndexState,
   SourceIndexedFrame,
+  MusicCue,
+  MusicGenerationState,
   TextOverlayEntry,
   TransitionEntry,
   VideoClip,
@@ -571,6 +573,7 @@ function buildBaseEditorState(input?: {
   | 'sourceIndex'
   | 'sourceIndexAnalysis'
   | 'sourceIndexAnalysisBySourceId'
+  | 'musicGeneration'
 > {
   return {
     videoFile: input?.videoFile ?? null,
@@ -623,6 +626,14 @@ function buildBaseEditorState(input?: {
     sourceIndex: null,
     sourceIndexAnalysis: null,
     sourceIndexAnalysisBySourceId: {},
+    musicGeneration: {
+      jobId: null,
+      status: 'idle',
+      error: null,
+      segments: [],
+      cues: [],
+      progress: null,
+    },
   };
 }
 
@@ -678,6 +689,7 @@ interface EditorState {
   sourceIndex: SourceIndex | null;
   sourceIndexAnalysis: SourceIndexAnalysisState | null;
   sourceIndexAnalysisBySourceId: SourceIndexAnalysisStateMap;
+  musicGeneration: MusicGenerationState;
   importSources: (
     sources: ImportedSourceDraft[],
     options?: { insertAtTime?: number; shouldAppendClips?: boolean },
@@ -750,6 +762,7 @@ interface EditorState {
       videoDuration?: number;
       sourceIndex?: unknown;
       sources?: unknown[];
+      musicGeneration?: unknown;
     },
     project: {
       projectId: string;
@@ -807,6 +820,13 @@ interface EditorState {
   updateCaption: (id: string, patch: { startTime?: number; endTime?: number }) => void;
   updateTextOverlay: (id: string, patch: { startTime?: number; endTime?: number }) => void;
   updateTransition: (id: string, patch: Partial<TransitionEntry>) => void;
+  setMusicGeneration: (state: Partial<MusicGenerationState>) => void;
+  updateMusicCue: (cueId: string, patch: Partial<MusicCue>) => void;
+  acceptMusicCue: (cueId: string) => void;
+  rejectMusicCue: (cueId: string) => void;
+  acceptAllMusicCues: () => void;
+  rejectAllMusicCues: () => void;
+  clearMusic: () => void;
 }
 
 type EditorStoreWithSnapshot = EditorState & {
@@ -1905,6 +1925,18 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       timelineProjectionFresh: derivedIndexState.timelineProjectionFresh,
       sourceIndex: (editState.sourceIndex as SourceIndex | null | undefined) ?? null,
       sourceIndexAnalysisBySourceId: {},
+      musicGeneration: (() => {
+        const raw = editState.musicGeneration as Partial<MusicGenerationState> | undefined;
+        if (!raw) return { jobId: null, status: 'idle' as const, error: null, segments: [], cues: [], progress: null };
+        return {
+          jobId: raw.jobId ?? null,
+          status: raw.status ?? 'idle',
+          error: raw.error ?? null,
+          segments: raw.segments ?? [],
+          cues: (raw.cues ?? []).map((cue) => ({ ...cue, signedUrl: null })),
+          progress: raw.progress ?? null,
+        };
+      })(),
     });
   },
 
@@ -2065,6 +2097,61 @@ export const useEditorStore = create<EditorState>((set, get) => ({
       ),
     };
   }),
+
+  setMusicGeneration: (patch) => set((state) => ({
+    musicGeneration: { ...state.musicGeneration, ...patch },
+  })),
+  updateMusicCue: (cueId, patch) => set((state) => ({
+    musicGeneration: {
+      ...state.musicGeneration,
+      cues: state.musicGeneration.cues.map((cue) =>
+        cue.id === cueId ? { ...cue, ...patch } : cue,
+      ),
+    },
+  })),
+  acceptMusicCue: (cueId) => set((state) => ({
+    musicGeneration: {
+      ...state.musicGeneration,
+      cues: state.musicGeneration.cues.map((cue) =>
+        cue.id === cueId ? { ...cue, status: 'accepted' } : cue,
+      ),
+    },
+  })),
+  rejectMusicCue: (cueId) => set((state) => ({
+    musicGeneration: {
+      ...state.musicGeneration,
+      cues: state.musicGeneration.cues.map((cue) =>
+        cue.id === cueId ? { ...cue, status: 'rejected' } : cue,
+      ),
+    },
+  })),
+  acceptAllMusicCues: () => set((state) => ({
+    musicGeneration: {
+      ...state.musicGeneration,
+      cues: state.musicGeneration.cues.map((cue) =>
+        cue.status === 'suggested' ? { ...cue, status: 'accepted' } : cue,
+      ),
+    },
+  })),
+  rejectAllMusicCues: () => set((state) => ({
+    musicGeneration: {
+      ...state.musicGeneration,
+      cues: state.musicGeneration.cues.map((cue) =>
+        cue.status === 'suggested' ? { ...cue, status: 'rejected' } : cue,
+      ),
+    },
+  })),
+  clearMusic: () => set((state) => ({
+    musicGeneration: {
+      ...state.musicGeneration,
+      cues: [],
+      segments: [],
+      jobId: null,
+      status: 'idle',
+      error: null,
+      progress: null,
+    },
+  })),
 
   addMarker: (marker) => {
     const id = marker.id ?? uuidv4();

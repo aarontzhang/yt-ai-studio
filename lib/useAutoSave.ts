@@ -39,6 +39,11 @@ export function buildProjectEditState(state: ReturnType<typeof useEditorStore.ge
     sourceIndexFreshBySourceId: state.sourceIndexFreshBySourceId,
     sourceIndex: state.sourceIndex,
     videoDuration: state.videoDuration,
+    musicGeneration: {
+      ...state.musicGeneration,
+      // Strip signed URLs — they expire and should be re-fetched on load
+      cues: state.musicGeneration.cues.map(({ signedUrl: _signedUrl, ...cue }) => cue),
+    },
   };
 }
 
@@ -74,6 +79,7 @@ export function useAutoSave() {
   const sourceIndexFreshBySourceId = useEditorStore(s => s.sourceIndexFreshBySourceId);
   const sourceIndex = useEditorStore(s => s.sourceIndex);
   const videoDuration = useEditorStore(s => s.videoDuration);
+  const musicGeneration = useEditorStore(s => s.musicGeneration);
   const currentProjectId = useEditorStore(s => s.currentProjectId);
   const setSaveStatus = useEditorStore(s => s.setSaveStatus);
 
@@ -106,5 +112,5 @@ export function useAutoSave() {
     }, 1500);
 
     return () => { if (timerRef.current) clearTimeout(timerRef.current); };
-  }, [clips, captions, transitions, markers, textOverlays, messages, appliedActions, aiSettings, backgroundTranscript, transcriptStatus, transcriptError, sources, sourceTranscriptCaptions, sourceIndexFreshBySourceId, sourceIndex, videoDuration, currentProjectId, setSaveStatus]);
+  }, [clips, captions, transitions, markers, textOverlays, messages, appliedActions, aiSettings, backgroundTranscript, transcriptStatus, transcriptError, sources, sourceTranscriptCaptions, sourceIndexFreshBySourceId, sourceIndex, videoDuration, musicGeneration, currentProjectId, setSaveStatus]);
 }

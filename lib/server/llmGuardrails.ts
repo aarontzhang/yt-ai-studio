@@ -629,5 +629,13 @@ export function validateEditAction(rawAction: unknown, context: ActionValidation
     return { ...base, type, settings };
   }
 
+  if (type === 'add_background_music') {
+    return { ...base, type };
+  }
+
+  if (type === 'remove_background_music') {
+    return { ...base, type };
+  }
+
   return null;
 }

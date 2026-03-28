@@ -342,7 +342,9 @@ export function applyActionToSnapshot(
     resolvedAction.type === 'none' ||
     resolvedAction.type === 'transcribe_request' ||
     resolvedAction.type === 'request_frames' ||
-    resolvedAction.type === 'update_ai_settings'
+    resolvedAction.type === 'update_ai_settings' ||
+    resolvedAction.type === 'add_background_music' ||
+    resolvedAction.type === 'remove_background_music'
   ) return snapshot;
 
   if (resolvedAction.type === 'split_clip') {
