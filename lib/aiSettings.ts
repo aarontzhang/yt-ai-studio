@@ -42,8 +42,8 @@ function normalizeLegacySilenceRemovalPatch(
 export const DEFAULT_AI_EDITING_SETTINGS: AIEditingSettings = {
   silenceRemoval: {
     paddingSeconds: 0,
-    minDurationSeconds: 0.08,
-    preserveShortPauses: false,
+    minDurationSeconds: 0.5,
+    preserveShortPauses: true,
     requireSpeakerAbsence: true,
   },
   // frameInspection intentionally omitted — visual frame analysis infrastructure removed
