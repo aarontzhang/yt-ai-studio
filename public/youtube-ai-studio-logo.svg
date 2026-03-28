@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 100">
+  <!-- Red rounded rectangle icon -->
+  <rect x="5" y="8" width="120" height="84" rx="20" fill="#FF0000"/>
+
+  <!-- White Gemini Star (4-pointed sparkle, symmetric) -->
+  <path d="M 65,26 C 65,39 52,50 41,50 C 52,50 65,61 65,74 C 65,61 78,50 89,50 C 78,50 65,39 65,26 Z" fill="white"/>
+
+  <!-- YouTube AI Studio text -->
+  <text x="142" y="71" font-family="'Product Sans','Google Sans','Roboto',Arial,sans-serif" font-size="58" font-weight="500" fill="#282828" letter-spacing="-1">YouTube AI Studio</text>
+</svg>

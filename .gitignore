@@ -47,3 +47,6 @@ public/ffmpeg/ffmpeg-core.js
 
 # ai-video-editor next build artifacts
 ai-video-editor/.next/
+
+# Storyline
+Storyline/
