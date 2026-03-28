@@ -17,8 +17,6 @@ import {
   getFileSizeErrorMessage,
   getVideoDurationLimitErrorMessage,
 } from '@/lib/storageQuota';
-import { capture } from '@/lib/analytics';
-
 function readFileDuration(file: File): Promise<number> {
   return new Promise((resolve) => {
     const url = URL.createObjectURL(file);
@@ -78,11 +76,6 @@ export default function UploadScreen() {
 
     setUploadError('');
     setUploadProgress(0);
-    capture('upload_started', {
-      file_size_mb: parseFloat((file.size / 1_000_000).toFixed(2)),
-      duration_s: Math.round(duration),
-    });
-    const uploadStartMs = performance.now();
 
     try {
       const { projectId, storagePath } = await uploadVideoToSupabase(
@@ -91,14 +84,12 @@ export default function UploadScreen() {
         duration,
       );
       await refreshQuota();
-      capture('upload_completed', { upload_time_ms: Math.round(performance.now() - uploadStartMs) });
       console.log('Upload success:', { projectId, storagePath });
       const blobUrl = URL.createObjectURL(file);
       setVideoCloud(file, blobUrl, storagePath, projectId);
       router.push(`/editor?project=${projectId}`);
     } catch (err) {
       console.error('Upload error:', err);
-      capture('upload_failed', { reason: err instanceof Error ? err.message : 'Upload failed' });
       setUploadError(err instanceof Error ? err.message : 'Upload failed');
       setUploadProgress(null);
     }

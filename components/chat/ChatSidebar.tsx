@@ -35,8 +35,6 @@ import {
   serializeActionForComparison,
 } from '@/lib/requestChain';
 import AutocutMark from '@/components/branding/AutocutMark';
-import { capture } from '@/lib/analytics';
-
 const REVIEW_PREROLL_SECONDS = 2.5;
 
 type ChatResponse = {
@@ -214,9 +212,6 @@ async function postChatRequest(
             continue;
           }
 
-          if (res.status === 429) {
-            capture('chat_quota_hit', {});
-          }
           throw lastError;
         }
         return data ?? {};
@@ -1779,13 +1774,6 @@ function AssistantMessage({
       actionStatus: 'completed',
       actionResult: result,
     });
-    capture('chat_action_applied', { action_count: checkedReviewCount, action_types: [reviewedAction.type] });
-    if (reviewedAction.type === 'set_clip_filter' && reviewedAction.filter) {
-      capture('filter_applied', { filter_name: reviewedAction.filter.type });
-    }
-    if (reviewedAction.type === 'delete_ranges' && reviewedAction.ranges) {
-      capture('silence_removed', { silence_count: reviewedAction.ranges.length });
-    }
     setActiveReviewSession(null);
     setActiveReviewFocusItemId(null);
     setReviewResult(result);
@@ -2671,12 +2659,6 @@ export default function ChatSidebar() {
       }, ctrl, onChunk);
 
       setVisualSearchSession(visualSearch ?? null);
-      if (visualSearch) {
-        capture('visual_search_performed', {
-          query_length: latestUserInput.length,
-          has_results: (visualSearch.candidates?.length ?? 0) > 0,
-        });
-      }
       const markerAction = isMarkerMutationAction(action);
       if (!markerAction) {
         upsertMarkersFromVisualSearch(latestUserInput, visualSearch, addMarker);
@@ -2861,7 +2843,6 @@ export default function ChatSidebar() {
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
     addMessage({ role: 'user', content: text, requestChainId });
-    capture('chat_message_sent', { message_length: text.length, has_analysis: useServerSourceIndex });
     setIsChatLoading(true);
     setLoadingStatus('');
     setLoadingPhaseId(null);
@@ -2874,7 +2855,6 @@ export default function ChatSidebar() {
       await runSingleTurn(history, ctrl, requestChainId);
     } catch (err) {
       if ((err as Error)?.name !== 'AbortError') {
-        capture('chat_request_failed', { reason: err instanceof Error ? err.message : 'Unknown' });
         addMessage({
           role: 'assistant',
           content: `Network error: ${err instanceof Error ? err.message : 'Unknown'}`,

@@ -7,8 +7,6 @@ import { useAuth } from '@/components/auth/AuthProvider';
 import UserProfileMenu from '@/components/auth/UserProfileMenu';
 import AutocutMark from '@/components/branding/AutocutMark';
 import { describeSourceResolutionFailure, resolveProjectSources } from '@/lib/sourceMedia';
-import { capture } from '@/lib/analytics';
-
 export default function TopBar() {
   const videoFile = useEditorStore(s => s.videoFile);
   const videoData = useEditorStore(s => s.videoData);
@@ -87,13 +85,6 @@ export default function TopBar() {
       setFFmpegJob({ ...currentJob, ...patch, status: 'running' });
     };
 
-    const totalDurationS = clips.reduce((sum, clip) => sum + clip.sourceDuration / (clip.speed || 1), 0);
-    capture('export_started', {
-      clip_count: clips.length,
-      total_duration_s: Math.round(totalDurationS),
-      has_filters: clips.some(clip => clip.filter !== null),
-      has_captions: captions.length > 0,
-    });
     setFFmpegJob({ status: 'running', progress: 0, stage: 'Initializing…', isCancelling: false });
     try {
       const outputUrl = await exportClips({
@@ -220,7 +211,6 @@ export default function TopBar() {
         <a
           href={(ffmpegJob as { status: 'done'; outputUrl: string }).outputUrl}
           download="export-output.mp4"
-          onClick={() => capture('export_downloaded', {})}
           className="iridescent-button"
           style={{
             display: 'flex',

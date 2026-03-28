@@ -1,10 +1,9 @@
 'use client';
 
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback } from 'react';
 
 import { cancelActiveFFmpegJob } from '@/lib/ffmpegClient';
 import { useEditorStore } from '@/lib/useEditorStore';
-import { capture } from '@/lib/analytics';
 
 export default function ExportProgress() {
   const ffmpegJob = useEditorStore(s => s.ffmpegJob);
@@ -16,31 +15,6 @@ export default function ExportProgress() {
     setFFmpegJob({ ...currentJob, status: 'running', stage: 'Cancelling…', isCancelling: true });
     cancelActiveFFmpegJob();
   }, [setFFmpegJob]);
-
-  const exportStartMsRef = useRef<number | null>(null);
-  const reportedStatusRef = useRef<string | null>(null);
-
-  useEffect(() => {
-    if (ffmpegJob.status === 'running' && reportedStatusRef.current !== 'running') {
-      exportStartMsRef.current = performance.now();
-      reportedStatusRef.current = 'running';
-    }
-  }, [ffmpegJob.status]);
-
-  useEffect(() => {
-    if (ffmpegJob.status === 'done' && reportedStatusRef.current !== 'done') {
-      reportedStatusRef.current = 'done';
-      capture('export_completed', {
-        duration_ms: exportStartMsRef.current ? Math.round(performance.now() - exportStartMsRef.current) : 0,
-      });
-    } else if (ffmpegJob.status === 'error' && reportedStatusRef.current !== 'error') {
-      reportedStatusRef.current = 'error';
-      capture('export_failed', { reason: (ffmpegJob as { status: 'error'; message: string }).message ?? 'Unknown error' });
-    } else if (ffmpegJob.status === 'cancelled' && reportedStatusRef.current !== 'cancelled') {
-      reportedStatusRef.current = 'cancelled';
-      capture('export_canceled', {});
-    }
-  }, [ffmpegJob]);
 
   if (ffmpegJob.status === 'idle') return null;
 
@@ -225,7 +199,6 @@ export default function ExportProgress() {
               <a
                 href={(ffmpegJob as { status: 'done'; outputUrl: string }).outputUrl}
                 download="export-output.mp4"
-                onClick={() => capture('export_downloaded', {})}
                 style={{
                   padding: '7px 16px', fontSize: 13, fontWeight: 500,
                   background: 'rgba(255,255,255,0.08)',
