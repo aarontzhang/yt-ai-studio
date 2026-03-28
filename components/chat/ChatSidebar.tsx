@@ -2041,25 +2041,27 @@ function AssistantMessage({
           <AutoIdentity />
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
-          <div style={{
-            display: 'inline-block',
-            fontSize: 13,
-            color: 'var(--fg-secondary)',
-            lineHeight: 1.65,
-            fontFamily: 'var(--font-serif)',
-            padding: '10px 12px',
-            borderRadius: '10px 10px 10px 2px',
-            background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025))',
-            border: '1px solid rgba(255,255,255,0.07)',
-            maxWidth: '100%',
-            alignSelf: 'flex-start',
-            textAlign: 'left',
-            wordBreak: 'break-word',
-          }}>
-            <MarkerAwareText text={msg.content} />
+        {msg.content && (
+          <div style={{ display: 'flex', justifyContent: 'flex-start', width: '100%' }}>
+            <div style={{
+              display: 'inline-block',
+              fontSize: 13,
+              color: 'var(--fg-secondary)',
+              lineHeight: 1.65,
+              fontFamily: 'var(--font-serif)',
+              padding: '10px 12px',
+              borderRadius: '10px 10px 10px 2px',
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.025))',
+              border: '1px solid rgba(255,255,255,0.07)',
+              maxWidth: '100%',
+              alignSelf: 'flex-start',
+              textAlign: 'left',
+              wordBreak: 'break-word',
+            }}>
+              <MarkerAwareText text={msg.content} />
+            </div>
           </div>
-        </div>
+        )}
 
         {hasAction && meta && (
           <div style={{
@@ -2649,6 +2651,7 @@ export default function ChatSidebar() {
   const musicGeneration = useEditorStore(s => s.musicGeneration);
   const setMusicGeneration = useEditorStore(s => s.setMusicGeneration);
   const musicPollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const musicPreloadFiredRef = useRef(false);
   const mainTimelineDuration = useMemo(() => getTimelineDuration(clips), [clips]);
   const availableSources = useMemo(() => (
     resolveProjectSources({
@@ -2696,6 +2699,31 @@ export default function ChatSidebar() {
     });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentProjectId]);
+
+  // Reset preload flag when project changes
+  useEffect(() => {
+    musicPreloadFiredRef.current = false;
+  }, [currentProjectId]);
+
+  // Silently enqueue a music generation job as soon as indexing is ready so
+  // results are pre-baked by the time the user asks for background music.
+  useEffect(() => {
+    if (!initialIndexingReady) return;
+    const primarySource = sources.find(s => s.isPrimary);
+    if (!primarySource?.assetId || !currentProjectId) return;
+    if (musicGeneration.status !== 'idle') return;
+    if (musicPreloadFiredRef.current) return;
+
+    musicPreloadFiredRef.current = true;
+    void (async () => {
+      try {
+        const supabase = getSupabaseBrowser();
+        await ensureMusicGenerationJob(supabase, currentProjectId, primarySource.assetId!);
+      } catch (err) {
+        console.warn('[music preload] Failed to enqueue background music job:', err);
+      }
+    })();
+  }, [initialIndexingReady, sources, currentProjectId, musicGeneration.status]);
 
   useEffect(() => {
     if (transcriptStatus === 'loading' && (transcriptProgress === null || transcriptProgress.completed === 0)) {
@@ -2938,6 +2966,30 @@ export default function ChatSidebar() {
         }));
       }
 
+      // Handle background music action: attach the music card to the existing streamed message
+      if (action?.type === 'add_background_music') {
+        const musicMsgProps = {
+          role: 'assistant' as const,
+          content: assistantMessage,
+          requestChainId,
+          action: undefined,
+          actionStatus: undefined,
+          musicGenerationStatus: 'generating' as const,
+          final: isFinal,
+          isStreaming: false,
+        };
+        let musicMsgId: string;
+        if (streamingMessageId) {
+          updateMessage(streamingMessageId, musicMsgProps);
+          musicMsgId = streamingMessageId;
+        } else {
+          musicMsgId = addMessage(musicMsgProps);
+        }
+        producedVisibleResponse = true;
+        void startMusicPolling(musicMsgId);
+        return;
+      }
+
       const finalMessageProps = {
         role: 'assistant' as const,
         content: assistantMessage,
@@ -2976,7 +3028,7 @@ export default function ChatSidebar() {
         });
       }
     }
-  }, [addMarker, addMessage, applyStoredAction, buildCurrentTranscript, initialIndexingReady, recordAppliedAction, recordCompletedChainAction, removeMessage, requestSeek, setVisualSearchSession, updateMessage, updateRequestChainState]);
+  }, [addMarker, addMessage, applyStoredAction, buildCurrentTranscript, initialIndexingReady, recordAppliedAction, recordCompletedChainAction, removeMessage, requestSeek, setVisualSearchSession, startMusicPolling, updateMessage, updateRequestChainState]);
 
   const continueRequestChain = useCallback(async (
     requestChainId: string,
@@ -3019,14 +3071,12 @@ export default function ChatSidebar() {
     }
   }, [addMessage, initialIndexingReady, runSingleTurn, setIsChatLoading]);
 
-  const handleMusicCommand = useCallback(async () => {
+  const startMusicPolling = useCallback(async (assistantMsgId: string) => {
     const primarySource = sources.find(s => s.isPrimary);
     if (!currentProjectId || !primarySource?.assetId) {
-      addMessage({ role: 'assistant', content: 'No video loaded. Please upload a video before generating music.' });
+      useEditorStore.getState().updateMessage(assistantMsgId, { musicGenerationStatus: 'failed', content: 'No video loaded. Please upload a video before generating music.' });
       return;
     }
-    addMessage({ role: 'user', content: 'add background music' });
-    const assistantMsgId = addMessage({ role: 'assistant', content: '', musicGenerationStatus: 'generating' });
     try {
       const supabase = getSupabaseBrowser();
       const job = await ensureMusicGenerationJob(supabase, currentProjectId, primarySource.assetId);
@@ -3058,19 +3108,11 @@ export default function ChatSidebar() {
       console.error('Music generation failed:', err);
       useEditorStore.getState().updateMessage(assistantMsgId, { musicGenerationStatus: 'failed', content: 'Music generation failed. Please try again.' });
     }
-  }, [addMessage, currentProjectId, musicGeneration, setMusicGeneration, sources]);
+  }, [currentProjectId, musicGeneration, setMusicGeneration, sources]);
 
   const handleSendSingle = useCallback(async () => {
     const text = input.trim();
     if (!text || isChatLoading || reviewLocked || !initialIndexingReady) return;
-
-    if (text.toLowerCase().includes('background music') || text.toLowerCase().includes('add music')) {
-      setInput('');
-      setActiveMarkerMention(null);
-      if (textareaRef.current) textareaRef.current.style.height = 'auto';
-      await handleMusicCommand();
-      return;
-    }
 
     const requestChainId = crypto.randomUUID();
     requestChainStateRef.current[requestChainId] = {
@@ -3115,7 +3157,7 @@ export default function ChatSidebar() {
       setLoadingStatus('');
       setLoadingPhaseId(null);
     }
-  }, [addMessage, handleMusicCommand, initialIndexingReady, input, isChatLoading, messages, reviewLocked, runSingleTurn, setIsChatLoading, useServerSourceIndex]);
+  }, [addMessage, initialIndexingReady, input, isChatLoading, messages, reviewLocked, runSingleTurn, setIsChatLoading, useServerSourceIndex]);
 
   const handleTranscriptReady = useCallback(async (messageId: string) => {
     if (!initialIndexingReady) return;
