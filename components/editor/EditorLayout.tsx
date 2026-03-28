@@ -112,7 +112,7 @@ export default function EditorLayout({ projectId }: { projectId?: string | null 
   const processingVideoUrl = useEditorStore(s => s.processingVideoUrl);
   const currentProjectId = useEditorStore(s => s.currentProjectId);
   const sourceIndexAnalysisBySourceId = useEditorStore(s => s.sourceIndexAnalysisBySourceId);
-  const { user } = useAuth();
+  const { user, initialized: authInitialized } = useAuth();
   const { quota, loading: quotaLoading, refresh: refreshQuota } = useStorageQuota(Boolean(user));
   const refreshSourceIndex = useCallback(async (targetProjectId: string) => {
     const sourceIndexRes = await fetch(`/api/projects/${targetProjectId}/source-index`, { cache: 'no-store' });
@@ -485,6 +485,14 @@ export default function EditorLayout({ projectId }: { projectId?: string | null 
     if (videoFiles.length === 0) return;
     const targetProjectId = useEditorStore.getState().currentProjectId ?? projectId;
     if (!targetProjectId) return;
+    if (!authInitialized) {
+      setStorageNotice('Still connecting your account. Try importing again in a moment.');
+      return;
+    }
+    if (!user) {
+      setStorageNotice('Please sign in before importing media into this project.');
+      return;
+    }
     const hadSources = useEditorStore.getState().sources.length > 0;
     const drafts: Array<{
       file: File;
@@ -535,8 +543,6 @@ export default function EditorLayout({ projectId }: { projectId?: string | null 
 
     void queueProjectStateSync(targetProjectId);
 
-    if (!user) return;
-
     await Promise.all(addedSources.map(async (source, index) => {
       const draft = drafts[index];
       const folder = !hadSources && index === 0 && source.isPrimary ? 'main' : 'sources';
@@ -563,7 +569,7 @@ export default function EditorLayout({ projectId }: { projectId?: string | null 
       }
     }));
     await queueProjectStateSync(targetProjectId);
-  }, [handleStorageUploadError, handleStorageUploadSuccess, importSourceDrafts, projectId, queueProjectStateSync, readVideoDuration, updateSource, user]);
+  }, [authInitialized, handleStorageUploadError, handleStorageUploadSuccess, importSourceDrafts, projectId, queueProjectStateSync, readVideoDuration, updateSource, user]);
 
   const hasDraggedVideoFiles = useCallback((dataTransfer: DataTransfer) => (
     Array.from(dataTransfer.files).some((file) => file.type.startsWith('video/'))
