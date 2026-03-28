@@ -2218,8 +2218,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const preservedOverviewSources = new Set<string>();
     for (const sourceId of sourceIds) {
       if (
-        isAnalysisActive
-        && !hasEntriesForSource(normalizedIncomingTranscriptCaptions, sourceId)
+        !hasEntriesForSource(normalizedIncomingTranscriptCaptions, sourceId)
         && hasEntriesForSource(state.sourceTranscriptCaptions, sourceId)
       ) {
         preservedTranscriptSources.add(sourceId);
