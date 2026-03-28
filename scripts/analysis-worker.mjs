@@ -355,7 +355,7 @@ async function processGenerateMusicJob(job) {
   if (!geminiKey) throw new Error('GOOGLE_GEMINI_API_KEY is not set');
   if (!lyriaKey) throw new Error('GOOGLE_LYRIA_API_KEY is not set');
 
-  // 1. Fetch SourceIndex from project edit_state (stored as JSON by the app)
+  // 1. Fetch project edit_state — transcript captions are stored there by the client
   const { data: projectRow, error: projectError } = await supabase
     .from('projects')
     .select('edit_state')
@@ -365,14 +365,38 @@ async function processGenerateMusicJob(job) {
   if (projectError) throw projectError;
 
   const editState = projectRow?.edit_state ?? {};
-  // The full SourceIndex is persisted under edit_state.sourceIndex by the app
-  const sourceIndex = editState.sourceIndex ?? null;
-  const segments = sourceIndex?.segments ?? [];
-  const scenes = sourceIndex?.scenes ?? [];
 
-  // Fall back to building segments from asset_transcript_words if sourceIndex is absent
+  // Build segments from sourceTranscriptCaptions (saved by the app after transcription)
+  // These are CaptionEntry[] with { startTime, endTime, text, sourceId? }
+  const rawCaptions = Array.isArray(editState.sourceTranscriptCaptions)
+    ? editState.sourceTranscriptCaptions
+    : [];
+
+  const segments = [];
+  const scenes = [];
+
+  if (rawCaptions.length > 0) {
+    console.log(`[${jobId}] Building segments from ${rawCaptions.length} transcript captions…`);
+    const sorted = [...rawCaptions].sort((a, b) => (a.startTime ?? 0) - (b.startTime ?? 0));
+    for (let i = 0; i < sorted.length; i++) {
+      const cap = sorted[i];
+      const nextCap = sorted[i + 1];
+      const pauseAfterMs = nextCap ? Math.max(0, (nextCap.startTime - cap.endTime) * 1000) : 0;
+      if (typeof cap.startTime !== 'number' || typeof cap.endTime !== 'number' || !cap.text) continue;
+      segments.push({
+        id: `seg_${i}`,
+        text: String(cap.text),
+        sourceStart: cap.startTime,
+        sourceEnd: cap.endTime,
+        sceneId: null,
+        pauseAfterMs,
+      });
+    }
+  }
+
+  // Final fallback: asset_transcript_words (written by the analysis worker for index_asset jobs)
   if (segments.length === 0) {
-    console.log(`[${jobId}] No segments in sourceIndex — checking asset_transcript_words…`);
+    console.log(`[${jobId}] No captions in edit_state — checking asset_transcript_words…`);
     const { data: words, error: wordsError } = await supabase
       .from('asset_transcript_words')
       .select('start_time, end_time, text')
@@ -380,19 +404,19 @@ async function processGenerateMusicJob(job) {
       .order('start_time', { ascending: true });
 
     if (wordsError) throw wordsError;
-    if (!words || words.length === 0) throw new Error(`No transcript data found for asset ${assetId}. Run transcription first.`);
+    if (!words || words.length === 0) {
+      throw new Error(`No transcript data found for project ${projectId}. Run transcription first.`);
+    }
 
-    // Group words into ~sentence segments by pause gaps
-    const builtSegments = [];
     let groupWords = [];
     for (let i = 0; i < words.length; i++) {
       groupWords.push(words[i]);
       const nextWord = words[i + 1];
       const gap = nextWord ? (nextWord.start_time - words[i].end_time) * 1000 : 9999;
-      const groupDuration = (words[i].end_time - groupWords[0].start_time);
+      const groupDuration = words[i].end_time - groupWords[0].start_time;
       if (gap > 800 || groupDuration > 15 || i === words.length - 1) {
-        builtSegments.push({
-          id: `seg_${i}`,
+        segments.push({
+          id: `seg_w${i}`,
           text: groupWords.map((w) => w.text).join(' '),
           sourceStart: groupWords[0].start_time,
           sourceEnd: groupWords[groupWords.length - 1].end_time,
@@ -402,7 +426,6 @@ async function processGenerateMusicJob(job) {
         groupWords = [];
       }
     }
-    segments.push(...builtSegments);
   }
 
   if (segments.length === 0) {
