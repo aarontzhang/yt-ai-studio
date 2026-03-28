@@ -1,12 +1,9 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import ProjectDashboard from '@/components/projects/ProjectDashboard';
-import { useAuth } from '@/components/auth/AuthProvider';
-import UserProfileMenu from '@/components/auth/UserProfileMenu';
-import AutocutMark from '@/components/branding/AutocutMark';
-import { useStorageQuota } from '@/lib/useStorageQuota';
+export default function ProjectsPage() {
+  redirect('/content');
+}
+
 export interface Project {
   id: string;
   name: string;
@@ -18,7 +15,7 @@ export interface Project {
   updated_at: string;
 }
 
-export default function ProjectsPage() {
+function _LegacyProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
