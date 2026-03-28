@@ -4,76 +4,11 @@ import { getSupabaseServer } from '@/lib/supabase/server';
 import { getSupabaseAdmin } from '@/lib/supabase/admin';
 import { enforceSameOrigin } from '@/lib/server/requestSecurity';
 import { buildMusicSegments } from '@/lib/indexer/musicSegments';
+import { classifySegmentVibes } from '@/lib/server/geminiClient';
 import { generateMusicCue } from '@/lib/server/lyriaClient';
-import type { CaptionEntry, MusicCue, SourceSegment, SegmentVibeClassification, SceneBoundary } from '@/lib/types';
+import type { CaptionEntry, MusicCue, SourceSegment, SceneBoundary } from '@/lib/types';
 
-const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta';
-const GEMINI_MODEL = 'gemini-2.5-flash-preview-04-17';
 const MAX_SEGMENTS = 3;
-
-const GEMINI_SYSTEM_PROMPT = `You are a music supervisor analyzing video transcript segments to select background music. For each segment, classify the emotional mood, energy level, and suggest music genre hints based on the content and pacing.
-
-Return a JSON array with one object per segment in the same order as the input:
-{
-  "segmentId": "<id>",
-  "mood": "upbeat" | "calm" | "dramatic" | "melancholic" | "playful" | "suspenseful" | "inspirational" | "neutral",
-  "energy": "low" | "medium" | "high",
-  "genreHints": ["genre1", "genre2"],
-  "confidence": <number between 0.0 and 1.0>
-}
-
-Guidelines:
-- Consider both the words spoken AND the pacing (short segments with long pauses may indicate dramatic beats).
-- genreHints should be 1-3 music genres or styles (e.g. "ambient", "electronic", "orchestral", "lo-fi", "acoustic").
-- confidence reflects how certain you are about the classification (0.5 = uncertain, 1.0 = very clear emotional signal).
-- When text is purely informational with no emotional signal, use mood "neutral" and energy "medium".`;
-
-const VALID_MOODS = new Set(['upbeat', 'calm', 'dramatic', 'melancholic', 'playful', 'suspenseful', 'inspirational', 'neutral']);
-const VALID_ENERGIES = new Set(['low', 'medium', 'high']);
-
-async function classifySegments(
-  segments: SourceSegment[],
-  apiKey: string,
-): Promise<SegmentVibeClassification[]> {
-  const userContent = JSON.stringify(segments.map((s) => ({
-    id: s.id,
-    text: s.text,
-    durationSeconds: Math.round((s.sourceEnd - s.sourceStart) * 10) / 10,
-    pauseAfterMs: s.pauseAfterMs,
-  })));
-
-  const url = `${GEMINI_API_BASE}/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: GEMINI_SYSTEM_PROMPT }] },
-      contents: [{ parts: [{ text: userContent }] }],
-      generationConfig: { response_mime_type: 'application/json', temperature: 0.3 },
-    }),
-  });
-
-  if (!res.ok) {
-    const errText = await res.text().catch(() => '');
-    throw new Error(`Gemini API error ${res.status}: ${errText}`);
-  }
-
-  const data = await res.json();
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) throw new Error('Gemini returned empty response');
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const parsed: any[] = JSON.parse(text);
-  if (!Array.isArray(parsed)) throw new Error('Gemini response is not an array');
-
-  return parsed.map((item) => ({
-    segmentId: String(item.segmentId ?? ''),
-    mood: VALID_MOODS.has(item.mood) ? item.mood : 'neutral',
-    energy: VALID_ENERGIES.has(item.energy) ? item.energy : 'medium',
-    genreHints: Array.isArray(item.genreHints) ? item.genreHints.map(String).slice(0, 3) : [],
-    confidence: typeof item.confidence === 'number' ? Math.max(0, Math.min(1, item.confidence)) : 0.5,
-  }));
-}
 
 /** Build coarse SourceSegments from word-level CaptionEntry array (fallback when sourceIndex is absent). */
 function buildSegmentsFromCaptions(captions: CaptionEntry[]): SourceSegment[] {
@@ -120,8 +55,13 @@ export async function POST(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-  const apiKey = process.env.GOOGLE_LYRIA_API_KEY?.trim();
-  if (!apiKey) return NextResponse.json({ error: 'Music generation not configured' }, { status: 503 });
+  const geminiApiKey = process.env.GOOGLE_GEMINI_API_KEY?.trim();
+  if (!geminiApiKey) {
+    return NextResponse.json({ error: 'Gemini classification not configured' }, { status: 503 });
+  }
+
+  const lyriaApiKey = process.env.GOOGLE_LYRIA_API_KEY?.trim();
+  if (!lyriaApiKey) return NextResponse.json({ error: 'Music generation not configured' }, { status: 503 });
 
   let projectId: string;
   let musicPrompt: string | undefined;
@@ -166,7 +106,14 @@ export async function POST(request: NextRequest) {
 
   try {
     // 1. Classify segments via Gemini
-    const classifications = await classifySegments(segments, apiKey);
+    const classifications = await classifySegmentVibes(
+      segments.map((segment) => ({
+        id: segment.id,
+        text: segment.text,
+        durationSeconds: segment.sourceEnd - segment.sourceStart,
+        pauseAfterMs: segment.pauseAfterMs,
+      })),
+    );
 
     // 2. Build music segments
     const allMusicSegments = buildMusicSegments(segments, classifications, scenes);

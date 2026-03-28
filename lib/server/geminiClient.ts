@@ -23,7 +23,7 @@ function getApiKey(): string {
 }
 
 function getModel(): string {
-  return process.env.GEMINI_CLASSIFICATION_MODEL?.trim() || 'gemini-1.5-flash';
+  return process.env.GEMINI_CLASSIFICATION_MODEL?.trim() || 'gemini-2.5-flash';
 }
 
 const SYSTEM_PROMPT = `You are a music supervisor analyzing video transcript segments to select background music. For each segment, classify the emotional mood, energy level, and suggest music genre hints based on the content and pacing.
