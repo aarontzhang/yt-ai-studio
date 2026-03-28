@@ -2808,6 +2808,45 @@ export default function ChatSidebar() {
     }));
   }, [updateRequestChainState]);
 
+  const startMusicPolling = useCallback(async (assistantMsgId: string) => {
+    const primarySource = sources.find(s => s.isPrimary);
+    if (!currentProjectId || !primarySource?.assetId) {
+      useEditorStore.getState().updateMessage(assistantMsgId, { musicGenerationStatus: 'failed', content: 'No video loaded. Please upload a video before generating music.' });
+      return;
+    }
+    try {
+      const supabase = getSupabaseBrowser();
+      const job = await ensureMusicGenerationJob(supabase, currentProjectId, primarySource.assetId);
+      if (job) {
+        setMusicGeneration({ ...musicGeneration, jobId: job.jobId, status: job.status, progress: job.progress });
+      }
+      if (musicPollRef.current) clearInterval(musicPollRef.current);
+      musicPollRef.current = setInterval(async () => {
+        const supabaseInner = getSupabaseBrowser();
+        const jobState = await getLatestMusicJobForAsset(supabaseInner, currentProjectId, primarySource.assetId!);
+        if (!jobState) return;
+        if (jobState.status === 'completed' || jobState.status === 'failed') {
+          if (musicPollRef.current) clearInterval(musicPollRef.current);
+          const allCues = jobState.status === 'completed'
+            ? await fetchMusicCues(supabaseInner, currentProjectId)
+            : [];
+          // Omit cues where Lyria failed to produce audio (storagePath is null)
+          const cues = allCues.filter(c => c.storagePath !== null);
+          setMusicGeneration({ ...useEditorStore.getState().musicGeneration, status: jobState.status ?? 'completed', error: jobState.error ?? null, cues: allCues, progress: null });
+          useEditorStore.getState().updateMessage(assistantMsgId, {
+            musicGenerationStatus: jobState.status === 'completed' ? 'completed' : 'failed',
+            musicCues: cues.length > 0 ? cues : undefined,
+          });
+        } else {
+          setMusicGeneration({ ...useEditorStore.getState().musicGeneration, status: jobState.status ?? musicGeneration.status, progress: jobState.progress ?? null });
+        }
+      }, 3000);
+    } catch (err) {
+      console.error('Music generation failed:', err);
+      useEditorStore.getState().updateMessage(assistantMsgId, { musicGenerationStatus: 'failed', content: 'Music generation failed. Please try again.' });
+    }
+  }, [currentProjectId, musicGeneration, setMusicGeneration, sources]);
+
   const runSingleTurn = useCallback(async (
     history: ChatRequestMessage[],
     ctrl: AbortController,
@@ -3070,45 +3109,6 @@ export default function ChatSidebar() {
       setLoadingPhaseId(null);
     }
   }, [addMessage, initialIndexingReady, runSingleTurn, setIsChatLoading]);
-
-  const startMusicPolling = useCallback(async (assistantMsgId: string) => {
-    const primarySource = sources.find(s => s.isPrimary);
-    if (!currentProjectId || !primarySource?.assetId) {
-      useEditorStore.getState().updateMessage(assistantMsgId, { musicGenerationStatus: 'failed', content: 'No video loaded. Please upload a video before generating music.' });
-      return;
-    }
-    try {
-      const supabase = getSupabaseBrowser();
-      const job = await ensureMusicGenerationJob(supabase, currentProjectId, primarySource.assetId);
-      if (job) {
-        setMusicGeneration({ ...musicGeneration, jobId: job.jobId, status: job.status, progress: job.progress });
-      }
-      if (musicPollRef.current) clearInterval(musicPollRef.current);
-      musicPollRef.current = setInterval(async () => {
-        const supabaseInner = getSupabaseBrowser();
-        const jobState = await getLatestMusicJobForAsset(supabaseInner, currentProjectId, primarySource.assetId!);
-        if (!jobState) return;
-        if (jobState.status === 'completed' || jobState.status === 'failed') {
-          if (musicPollRef.current) clearInterval(musicPollRef.current);
-          const allCues = jobState.status === 'completed'
-            ? await fetchMusicCues(supabaseInner, currentProjectId)
-            : [];
-          // Omit cues where Lyria failed to produce audio (storagePath is null)
-          const cues = allCues.filter(c => c.storagePath !== null);
-          setMusicGeneration({ ...useEditorStore.getState().musicGeneration, status: jobState.status ?? 'completed', error: jobState.error ?? null, cues: allCues, progress: null });
-          useEditorStore.getState().updateMessage(assistantMsgId, {
-            musicGenerationStatus: jobState.status === 'completed' ? 'completed' : 'failed',
-            musicCues: cues.length > 0 ? cues : undefined,
-          });
-        } else {
-          setMusicGeneration({ ...useEditorStore.getState().musicGeneration, status: jobState.status ?? musicGeneration.status, progress: jobState.progress ?? null });
-        }
-      }, 3000);
-    } catch (err) {
-      console.error('Music generation failed:', err);
-      useEditorStore.getState().updateMessage(assistantMsgId, { musicGenerationStatus: 'failed', content: 'Music generation failed. Please try again.' });
-    }
-  }, [currentProjectId, musicGeneration, setMusicGeneration, sources]);
 
   const handleSendSingle = useCallback(async () => {
     const text = input.trim();
