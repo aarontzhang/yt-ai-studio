@@ -36,8 +36,6 @@ export async function proxy(request: NextRequest) {
   const isPublic = (
     pathname === '/'
     || pathname === '/waitlist'
-    || pathname === '/content'
-    || pathname === '/editor'
     || pathname.startsWith('/api')
     || pathname.startsWith('/auth')
     || pathname.startsWith('/_next')
