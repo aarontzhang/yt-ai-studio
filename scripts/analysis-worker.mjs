@@ -463,34 +463,39 @@ async function processGenerateMusicJob(job) {
   const musicSegments = buildMusicSegments(segments, classifications, scenes);
   console.log(`[${jobId}] Built ${musicSegments.length} music segments.`);
 
-  // 4. Generate music cues
+  // 4. Generate music cues in parallel
+  await updateJobProgress(jobId, 'generating_music', 0, musicSegments.length, `Generating ${musicSegments.length} music cue(s) in parallel…`);
+  console.log(`[${jobId}] Generating ${musicSegments.length} music cue(s) in parallel…`);
+
+  let completedCount = 0;
+  const cueResults = await Promise.allSettled(
+    musicSegments.map(async (seg, i) => {
+      console.log(`[${jobId}] Starting cue ${i + 1}/${musicSegments.length}: ${seg.mood}/${seg.energy} (${Math.round(seg.sourceEnd - seg.sourceStart)}s)`);
+      let storagePath = null;
+      try {
+        const { audioBase64, mimeType } = await generateMusicCue(seg, lyriaKey);
+        const buffer = Buffer.from(audioBase64, 'base64');
+        const ext = mimeType.includes('mp3') ? 'mp3' : mimeType.includes('wav') ? 'wav' : 'mp3';
+        const cueId = randomUUID();
+        storagePath = `${projectId}/${cueId}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+          .from('music')
+          .upload(storagePath, buffer, { contentType: mimeType, upsert: true });
+        if (uploadError) throw uploadError;
+      } catch (err) {
+        console.error(`[${jobId}] Failed to generate/upload cue ${i + 1}:`, err.message);
+      }
+      completedCount++;
+      await updateJobProgress(jobId, 'generating_music', completedCount, musicSegments.length, `Generated ${completedCount} of ${musicSegments.length} music cue(s)…`);
+      return { seg, storagePath };
+    }),
+  );
+
+  // Insert all cue rows
   const cues = [];
-  for (let i = 0; i < musicSegments.length; i++) {
-    const seg = musicSegments[i];
-    await updateJobProgress(jobId, 'generating_music', i, musicSegments.length, `Generating music ${i + 1} of ${musicSegments.length}…`);
-    console.log(`[${jobId}] Generating music cue ${i + 1}/${musicSegments.length}: ${seg.mood}/${seg.energy} (${Math.round(seg.sourceEnd - seg.sourceStart)}s)`);
-
-    let storagePath = null;
-    try {
-      const { audioBase64, mimeType } = await generateMusicCue(seg, lyriaKey);
-
-      // Decode and upload
-      const buffer = Buffer.from(audioBase64, 'base64');
-      const ext = mimeType.includes('mp3') ? 'mp3' : mimeType.includes('wav') ? 'wav' : 'mp3';
-      const cueId = randomUUID();
-      storagePath = `${projectId}/${cueId}.${ext}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from('music')
-        .upload(storagePath, buffer, { contentType: mimeType, upsert: true });
-
-      if (uploadError) throw uploadError;
-    } catch (err) {
-      console.error(`[${jobId}] Failed to generate/upload cue ${i + 1}:`, err.message);
-      // Continue with remaining cues even if one fails
-    }
-
-    // Insert music_cue row
+  for (const result of cueResults) {
+    const { seg, storagePath } = result.status === 'fulfilled' ? result.value : { seg: null, storagePath: null };
+    if (!seg) continue;
     const { error: insertError } = await supabase
       .from('music_cues')
       .insert({
@@ -510,7 +515,6 @@ async function processGenerateMusicJob(job) {
         fade_in_seconds: 1.0,
         fade_out_seconds: 1.5,
       });
-
     if (insertError) console.error(`[${jobId}] Failed to insert music cue:`, insertError.message);
     else cues.push({ segmentId: seg.id, storagePath });
   }
