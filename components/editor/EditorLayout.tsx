@@ -7,6 +7,7 @@ import { buildOverlappingRanges, transcribeSourceRanges } from '@/lib/transcript
 import TopBar from './TopBar';
 import VideoPlayer, { VideoPlayerHandle } from './VideoPlayer';
 import MediaPanel from './MediaPanel';
+import MusicPanel from './MusicPanel';
 import Timeline from './Timeline';
 import ChatSidebar from '../chat/ChatSidebar';
 import ExportProgress from './ExportProgress';
@@ -607,9 +608,14 @@ export default function EditorLayout({ projectId }: { projectId?: string | null 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
             <div style={{ width: mediaPanelWidth, flexShrink: 0, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-              <MediaPanel
-                onImportSources={(files) => importSources(files, 'append')}
-              />
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+                <MediaPanel
+                  onImportSources={(files) => importSources(files, 'append')}
+                />
+              </div>
+              <div style={{ borderTop: '1px solid var(--border)', flexShrink: 0 }}>
+                <MusicPanel />
+              </div>
               <div
                 onMouseDown={startMediaResize}
                 style={{

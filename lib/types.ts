@@ -233,7 +233,10 @@ export type AnalysisJobStage =
   | 'dense_refinement'
   | 'extracting_frames'
   | 'describing_frames'
-  | 'transcribing';
+  | 'transcribing'
+  | 'classifying_segments'
+  | 'merging_music_segments'
+  | 'generating_music';
 
 export interface AnalysisProgress {
   stage: AnalysisJobStage;
@@ -381,6 +384,8 @@ export interface EditAction {
     | 'add_text_overlay'
     | 'replace_text_overlay'
     | 'update_ai_settings'
+    | 'add_background_music'
+    | 'remove_background_music'
     | 'none';
   // split_clip
   splitTime?: number;
@@ -461,4 +466,83 @@ export interface SourceIndex {
   segments: SourceSegment[];
   scenes: SceneBoundary[];
   indexedAt: string;
+}
+
+// ─── Music Generation Layer ─────────────────────────────────────────────────
+
+export type MusicMood =
+  | 'upbeat'
+  | 'calm'
+  | 'dramatic'
+  | 'melancholic'
+  | 'playful'
+  | 'suspenseful'
+  | 'inspirational'
+  | 'neutral';
+
+export type MusicEnergy = 'low' | 'medium' | 'high';
+
+export interface SegmentVibeClassification {
+  segmentId: string;
+  mood: MusicMood;
+  energy: MusicEnergy;
+  genreHints: string[];
+  confidence: number;
+}
+
+export interface MusicSegment {
+  id: string;
+  sourceSegmentIds: string[];
+  sourceStart: number;
+  sourceEnd: number;
+  mood: MusicMood;
+  energy: MusicEnergy;
+  genreHints: string[];
+  sceneIds: string[];
+}
+
+export type MusicCueStatus =
+  | 'pending'
+  | 'generating'
+  | 'suggested'
+  | 'accepted'
+  | 'rejected'
+  | 'failed';
+
+export interface MusicCue {
+  id: string;
+  musicSegmentId: string;
+  sourceStart: number;
+  sourceEnd: number;
+  durationSeconds: number;
+  mood: MusicMood;
+  energy: MusicEnergy;
+  genreHints: string[];
+  storagePath: string | null;
+  signedUrl: string | null;
+  status: MusicCueStatus;
+  volumeDb: number;        // default -18
+  fadeInSeconds: number;   // default 1.0
+  fadeOutSeconds: number;  // default 1.5
+}
+
+export type MusicGenerationStatus =
+  | 'idle'
+  | 'classifying'
+  | 'merging'
+  | 'generating'
+  | 'completed'
+  | 'failed';
+
+export interface MusicGenerationState {
+  jobId: string | null;
+  status: MusicGenerationStatus;
+  error: string | null;
+  segments: MusicSegment[];
+  cues: MusicCue[];
+  progress: {
+    stage: string;
+    completed: number;
+    total: number;
+  } | null;
 }

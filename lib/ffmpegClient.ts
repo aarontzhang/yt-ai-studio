@@ -3,8 +3,8 @@
 import { FFmpeg } from '@ffmpeg/ffmpeg';
 
 import { buildCaptionRenderWindows, invertSegments } from './timelineUtils';
-import { normalizeTransitionEntries, resolveTransitions } from './playbackEngine';
-import { CaptionEntry, TextOverlayEntry, TransitionEntry, VideoClip } from './types';
+import { buildClipSchedule, normalizeTransitionEntries, resolveTransitions } from './playbackEngine';
+import { CaptionEntry, ClipScheduleEntry, MusicCue, TextOverlayEntry, TransitionEntry, VideoClip } from './types';
 import { MAIN_SOURCE_ID } from './sourceUtils';
 import { getTextOverlayExportY, getTextOverlayFontSize, normalizeTextOverlayEntry } from './textOverlays';
 
@@ -676,9 +676,35 @@ export interface ExportClipsOptions {
   captions?: CaptionEntry[];
   textOverlays?: TextOverlayEntry[];
   transitions?: TransitionEntry[];
+  musicCues?: MusicCue[];
   signal?: AbortSignal;
   onStage?: (stage: string) => void;
   onProgress?: (progress: number) => void;
+}
+
+function projectMusicCueToTimeline(
+  cue: MusicCue,
+  schedule: ClipScheduleEntry[],
+): { timelineStart: number; timelineEnd: number } | null {
+  // Find the first schedule entry whose source range overlaps with the cue
+  for (const entry of schedule) {
+    if (entry.sourceId !== cue.musicSegmentId && true) {
+      // Music cues are by sourceStart/sourceEnd in source time; find which clip
+      // covers that source range for the primary source
+      const entrySourceEnd = entry.sourceStart + entry.sourceDuration;
+      if (cue.sourceStart < entrySourceEnd && cue.sourceEnd > entry.sourceStart) {
+        const overlapStart = Math.max(cue.sourceStart, entry.sourceStart);
+        const offsetIntoEntry = overlapStart - entry.sourceStart;
+        const timelineStart = entry.timelineStart + offsetIntoEntry / entry.speed;
+        const cueDuration = (Math.min(cue.sourceEnd, entrySourceEnd) - overlapStart) / entry.speed;
+        return {
+          timelineStart,
+          timelineEnd: timelineStart + cueDuration,
+        };
+      }
+    }
+  }
+  return null;
 }
 
 export async function exportClips({
@@ -687,6 +713,7 @@ export async function exportClips({
   captions = [],
   textOverlays = [],
   transitions = [],
+  musicCues = [],
   signal,
   onStage,
   onProgress,
@@ -913,7 +940,65 @@ export async function exportClips({
         '-movflags', '+faststart',
         'export_output.mp4',
       ]);
-      return createExportObjectUrl(ffmpeg, 'export_output.mp4', reportOverallProgress, onStage);
+      stitchedOutputName = 'export_output.mp4';
+    }
+
+    // Mix accepted music cues into the final output
+    const acceptedCues = musicCues.filter((cue) => cue.status === 'accepted' && cue.signedUrl);
+    if (acceptedCues.length > 0) {
+      phaseStart = 97;
+      phaseSpan = 2;
+      onStage?.('Mixing background music…');
+      const schedule = buildClipSchedule(clips, normalizeTransitionEntries(clips, transitions));
+
+      const musicInputs: string[] = [];
+      const musicDelays: string[] = [];
+
+      for (let idx = 0; idx < acceptedCues.length; idx += 1) {
+        const cue = acceptedCues[idx];
+        const range = projectMusicCueToTimeline(cue, schedule);
+        if (!range) continue;
+        const musicFile = `music_cue_${idx}.audio`;
+        const audioData = await readMediaInput(cue.signedUrl!);
+        job.throwIfCancelled();
+        await ffmpeg.writeFile(musicFile, cloneWritableBytes(audioData));
+        musicInputs.push(musicFile);
+        const delayMs = Math.round(range.timelineStart * 1000);
+        const volumeLinear = Math.pow(10, (cue.volumeDb ?? -18) / 20);
+        musicDelays.push(
+          `[${idx + 1}:a]` +
+          `adelay=${delayMs}|${delayMs},` +
+          `afade=t=in:st=${range.timelineStart}:d=${cue.fadeInSeconds ?? 1.0},` +
+          `afade=t=out:st=${Math.max(0, range.timelineEnd - (cue.fadeOutSeconds ?? 1.5))}:d=${cue.fadeOutSeconds ?? 1.5},` +
+          `volume=${volumeLinear.toFixed(4)}` +
+          `[music${idx}]`,
+        );
+      }
+
+      if (musicInputs.length > 0) {
+        const videoInput = stitchedOutputName === 'export_output.mp4' ? 'export_output.mp4' : stitchedOutputName;
+        const mixedOutput = 'export_music_output.mp4';
+        const musicLabels = musicInputs.map((_, idx) => `[music${idx}]`).join('');
+        const amixFilter = `[0:a]${musicLabels}amix=inputs=${musicInputs.length + 1}:duration=first:dropout_transition=2[aout]`;
+        const filterComplex = [...musicDelays, amixFilter].join(';');
+
+        const args: string[] = ['-i', videoInput];
+        for (const mf of musicInputs) {
+          args.push('-i', mf);
+        }
+        args.push(
+          '-filter_complex', filterComplex,
+          '-map', '0:v',
+          '-map', '[aout]',
+          '-c:v', 'copy',
+          '-c:a', 'aac',
+          '-b:a', '192k',
+          '-movflags', '+faststart',
+          mixedOutput,
+        );
+        await execOrThrow(ffmpeg, args);
+        return createExportObjectUrl(ffmpeg, mixedOutput, reportOverallProgress, onStage);
+      }
     }
 
     if (stitchedOutputName === 'export_output.mp4') {

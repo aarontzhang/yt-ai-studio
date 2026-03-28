@@ -149,6 +149,16 @@ Example — delete two silent sections (original silence was 22s–45s and 70s�
 - Use when the user asks to change default editing behavior, such as silence padding, silence cutoff, default transition duration/type, frame inspection density, or text overlay defaults
 - If the user asks to change a default and also wants an edit right now, update the settings first
 
+### 12. Add Background Music (add_background_music)
+- Trigger AI-generated background music for the video
+- Analyzes transcript mood/energy and generates instrumental music cues via AI
+- Music cues appear as suggestions for the user to accept or reject before they affect the export
+- Use when the user asks to add background music, score the video, or generate music
+
+### 13. Remove Background Music (remove_background_music)
+- Remove all background music cues from the project
+- Use when the user asks to remove, clear, or turn off background music
+
 ## Response format
 
 - Match the user's latest turn. If they are mainly providing context, brainstorming, or asking for advice, respond conversationally.
@@ -211,6 +221,12 @@ Replace/edit existing text overlay (index 0):
 
 Update AI settings:
 <action>{"type":"update_ai_settings","settings":{"silenceRemoval":{"paddingSeconds":1,"minDurationSeconds":3}},"message":"Updated the silence-removal defaults.","final":true}</action>
+
+Add background music:
+<action>{"type":"add_background_music","message":"Generating background music for your video.","final":true}</action>
+
+Remove background music:
+<action>{"type":"remove_background_music","message":"Removing all background music.","final":true}</action>
 
 No action:
 <action>{"type":"none","message":"Just a note."}</action>
@@ -991,7 +1007,9 @@ function isReviewGatedAction(action: EditAction | null | undefined): action is E
     && action.type !== 'add_marker'
     && action.type !== 'add_markers'
     && action.type !== 'update_marker'
-    && action.type !== 'remove_marker';
+    && action.type !== 'remove_marker'
+    && action.type !== 'add_background_music'
+    && action.type !== 'remove_background_music';
 }
 
 function buildReviewProposalMessage(action: EditAction): string {
