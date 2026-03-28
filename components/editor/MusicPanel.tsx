@@ -172,8 +172,9 @@ export default function MusicPanel() {
           progress: job.progress,
         });
       }
-    } catch (err) {
-      console.error('Failed to start music generation:', err);
+    } catch (err: unknown) {
+      const pgErr = err as { message?: string; code?: string; details?: string; hint?: string };
+      console.error('Failed to start music generation:', pgErr.message ?? err, 'code:', pgErr.code, 'details:', pgErr.details);
     } finally {
       setIsGenerating(false);
     }
