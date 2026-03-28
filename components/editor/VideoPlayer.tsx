@@ -588,6 +588,14 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
         audio = new Audio();
         audio.preload = 'auto';
         audio.src = url;
+        const newAudio = audio;
+        const onCanPlay = () => {
+          newAudio.removeEventListener('canplay', onCanPlay);
+          if (playbackIntentRef.current) {
+            syncMusicLayers(currentTimeRef.current, { allowPlay: true });
+          }
+        };
+        newAudio.addEventListener('canplay', onCanPlay);
         musicAudioBySourceIdRef.current.set(clip.sourceId, audio);
       }
 
@@ -607,7 +615,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
       audio.volume = Math.max(0, Math.min(1, clip.volume * fade));
 
       if (options?.allowPlay && playbackIntentRef.current) {
-        if (audio.paused) {
+        if (audio.paused && audio.readyState >= 2) {
           audio.play().catch((e: unknown) => {
             if (e instanceof Error && e.name !== 'AbortError') {
               console.warn('[BGM] play failed:', e.name, e.message);
@@ -623,6 +631,8 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
   // Preload audio elements as soon as music clips are added so they are ready before playback
   // reaches the clip's start time. Without this, creating the element on the first active frame
   // and immediately seeking + calling play() triggers an AbortError on unloaded media.
+  // A canplay listener fires syncMusicLayers once the audio has buffered enough to play cleanly,
+  // ensuring play() is not called before readyState >= 2.
   useEffect(() => {
     for (const clip of musicClips) {
       if (!musicAudioBySourceIdRef.current.has(clip.sourceId)) {
@@ -631,6 +641,13 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
           const audio = new Audio();
           audio.preload = 'auto';
           audio.src = url;
+          const onCanPlay = () => {
+            audio.removeEventListener('canplay', onCanPlay);
+            if (playbackIntentRef.current) {
+              syncMusicLayers(currentTimeRef.current, { allowPlay: true });
+            }
+          };
+          audio.addEventListener('canplay', onCanPlay);
           musicAudioBySourceIdRef.current.set(clip.sourceId, audio);
         }
       }
@@ -643,7 +660,7 @@ const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(({ videoRef 
         musicAudioBySourceIdRef.current.delete(sourceId);
       }
     }
-  }, [musicClips, getResolvedPlayableUrl]);
+  }, [musicClips, getResolvedPlayableUrl, syncMusicLayers]);
 
   const syncLayers = useCallback((timelineTime: number, options?: { allowPlay?: boolean }) => {
     const activeEntries = findRenderEntriesAtTime(renderTimeline, timelineTime);
