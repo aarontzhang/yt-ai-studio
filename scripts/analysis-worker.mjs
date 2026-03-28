@@ -222,6 +222,7 @@ Return a JSON array with one object per segment in the same order as the input:
 Guidelines:
 - Consider both the words spoken AND the pacing (short segments with long pauses may indicate dramatic beats).
 - genreHints should be 1-3 music genres or styles (e.g. "ambient", "electronic", "orchestral", "lo-fi", "acoustic").
+- CRITICAL: All genre hints must be fully instrumental styles. Never suggest genres that typically include vocals or lyrics (e.g. never suggest "pop", "hip-hop", "rap", "singer-songwriter", "indie pop", "folk", "country", "jazz vocals", "R&B", "soul"). Only suggest instrumental genres such as ambient, cinematic, orchestral, electronic, lo-fi, acoustic guitar, post-rock, neo-classical, jazz (instrumental), etc.
 - confidence reflects how certain you are about the classification (0.5 = uncertain, 1.0 = very clear emotional signal).
 - When text is purely informational with no emotional signal, use mood "neutral" and energy "medium".`;
 
@@ -282,7 +283,7 @@ const MOOD_DESCRIPTIONS = {
   upbeat: 'cheerful, forward-moving, and optimistic',
   calm: 'peaceful, steady, and relaxing',
   dramatic: 'intense, cinematic, and powerful',
-  melancholic: 'wistful, reflective, and bittersweet',
+  melancholic: 'gentle, introspective, and quietly thoughtful',
   playful: 'fun, lighthearted, and whimsical',
   suspenseful: 'tense, mysterious, and building anticipation',
   inspirational: 'uplifting, motivational, and soaring',
@@ -296,7 +297,8 @@ function buildMusicPrompt(segment) {
   const mood = segment.mood.charAt(0).toUpperCase() + segment.mood.slice(1);
   return [
     `${mood}, ${segment.energy}-energy ${genreStr}background music.`,
-    `Instrumental only, no vocals. Suitable for video background.`,
+    `Purely instrumental. Absolutely no vocals, no lyrics, no singing, no chanting, no spoken word, no humming. Music only.`,
+    `Suitable for video background.`,
     `Duration: approximately ${duration} seconds.`,
     `Should feel ${description}.`,
   ].join(' ');

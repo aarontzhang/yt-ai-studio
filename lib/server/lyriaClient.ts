@@ -37,7 +37,8 @@ function buildPrompt(segment: MusicSegment): string {
 
   return [
     `${capitalize(segment.mood)}, ${segment.energy}-energy ${genreStr}background music.`,
-    `Instrumental only, no vocals. Suitable for video background.`,
+    `Purely instrumental. Absolutely no vocals, no lyrics, no singing, no chanting, no spoken word, no humming. Music only.`,
+    `Suitable for video background.`,
     `Duration: approximately ${duration} seconds.`,
     `Should feel ${description}.`,
   ].join(' ');
