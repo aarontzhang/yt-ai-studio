@@ -129,7 +129,7 @@ export default function TopBar() {
             fontWeight: 600,
             color: 'var(--fg-primary)',
             letterSpacing: '-0.02em',
-            fontFamily: 'var(--font-sans)',
+            fontFamily: 'var(--font-serif)',
           }}
         >
           YouTube AI Studio

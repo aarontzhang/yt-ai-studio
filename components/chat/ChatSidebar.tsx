@@ -1513,21 +1513,8 @@ function MarkerAwareText({ text }: { text: string }) {
 
 function AutoAvatar({ size = 28 }: { size?: number }) {
   return (
-    <div style={{
-      width: size,
-      height: size,
-      borderRadius: 10,
-      background: '#0A0A0A',
-      border: '1px solid rgba(255,255,255,0.12)',
-      display: 'inline-flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-      flexShrink: 0,
-    }}>
-      <YouTubeAIStudioMark
-        size={Math.max(16, Math.round(size * 0.78))}
-      />
+    <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <YouTubeAIStudioMark size={size} />
     </div>
   );
 }
@@ -1546,7 +1533,7 @@ function AutoIdentity({
         fontFamily: 'var(--font-serif)',
         letterSpacing: 0.1,
       }}>
-        Auto
+        YouTube AI Studio
       </span>
       {subtitle && (
         <span style={{
@@ -3414,7 +3401,7 @@ export default function ChatSidebar() {
           <AutoAvatar size={30} />
           <div style={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--fg-primary)', fontFamily: 'var(--font-serif)' }}>
-              Auto
+              YouTube AI Studio
             </span>
           </div>
         </div>
