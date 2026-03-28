@@ -49,7 +49,7 @@ function AppWindow({
       background: '#0d0d0d',
       borderRadius: 10,
       border: accent
-        ? '1px solid rgba(33, 212, 255, 0.22)'
+        ? '1px solid rgba(62, 166, 255, 0.22)'
         : '1px solid rgba(255,255,255,0.09)',
       overflow: 'hidden',
       display: 'flex',
@@ -179,12 +179,12 @@ function HeroEditorMock() {
                 <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.6)' }}>0:13 / 7:42</span>
               </div>
               <div style={{ height: 2, background: 'rgba(255,255,255,0.15)', borderRadius: 1, position: 'relative' }}>
-                <div style={{ width: '28%', height: '100%', background: '#21d4ff', borderRadius: 1 }} />
+                <div style={{ width: '28%', height: '100%', background: '#3ea6ff', borderRadius: 1 }} />
                 <div style={{
                   position: 'absolute', top: '50%', left: '28%',
                   transform: 'translate(-50%, -50%)',
                   width: 8, height: 8, borderRadius: '50%',
-                  background: '#21d4ff',
+                  background: '#3ea6ff',
                   boxShadow: '0 0 6px rgba(33,212,255,0.7)',
                 }} />
               </div>
@@ -289,7 +289,7 @@ function HeroEditorMock() {
                       background: 'rgba(33,212,255,0.1)',
                       border: '1px solid rgba(33,212,255,0.28)',
                       borderRadius: 5, fontSize: 11, fontWeight: 500,
-                      color: '#21d4ff', cursor: 'pointer', fontFamily: 'inherit',
+                      color: '#3ea6ff', cursor: 'pointer', fontFamily: 'inherit',
                     }}>
                       Start review →
                     </button>
@@ -359,7 +359,7 @@ function ChatFlowMock() {
               <div style={{ padding: '0 12px 8px', display: 'flex', gap: 5 }}>
                 {['@1 · 1:24', '@2 · 3:07', '@3 · 5:51'].map(m => (
                   <div key={m} style={{
-                    fontSize: 10, color: '#21d4ff',
+                    fontSize: 10, color: '#3ea6ff',
                     background: 'rgba(33,212,255,0.08)',
                     border: '1px solid rgba(33,212,255,0.2)',
                     borderRadius: 4, padding: '2px 6px',
@@ -471,7 +471,7 @@ function TimelineMock() {
                 <div key={m.label} style={{
                   position: 'absolute', top: '50%', left: m.pos,
                   transform: 'translate(-50%,-50%)',
-                  fontSize: 8.5, fontWeight: 700, color: '#21d4ff',
+                  fontSize: 8.5, fontWeight: 700, color: '#3ea6ff',
                   background: 'rgba(33,212,255,0.12)',
                   border: '1px solid rgba(33,212,255,0.3)',
                   borderRadius: 3, padding: '1px 4px',

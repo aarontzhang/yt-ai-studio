@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import YTCreateMenu from './YTCreateMenu';
 
-export default function YTTopBar() {
+interface YTTopBarProps {
+  onUploadClick?: () => void;
+}
+
+export default function YTTopBar({ onUploadClick }: YTTopBarProps) {
   return (
     <header
       role="banner"
@@ -122,7 +126,7 @@ export default function YTTopBar() {
         </button>
 
         {/* Create button — opens dropdown */}
-        <YTCreateMenu />
+        <YTCreateMenu onUploadClick={onUploadClick} />
 
         {/* Avatar — placeholder grey circle */}
         <button

@@ -1,16 +1,19 @@
+'use client';
+
 import React from 'react';
 import YTTopBar from './YTTopBar';
 import YTSidebar from './YTSidebar';
 
 interface YTShellProps {
   children: React.ReactNode;
+  onUploadClick?: () => void;
 }
 
-export default function YTShell({ children }: YTShellProps) {
+export default function YTShell({ children, onUploadClick }: YTShellProps) {
   return (
     <div className="min-h-screen bg-yt-base">
       {/* Fixed top bar */}
-      <YTTopBar />
+      <YTTopBar onUploadClick={onUploadClick} />
 
       {/* Fixed sidebar */}
       <YTSidebar />
