@@ -49,7 +49,7 @@ function AppWindow({
       background: '#0d0d0d',
       borderRadius: 10,
       border: accent
-        ? '1px solid rgba(33, 212, 255, 0.22)'
+        ? '1px solid rgba(255, 0, 0, 0.22)'
         : '1px solid rgba(255,255,255,0.09)',
       overflow: 'hidden',
       display: 'flex',
@@ -91,8 +91,8 @@ function AppWindow({
 
 function HeroEditorMock() {
   const tracks: HeroTrack[] = [
-    { label: 'video', segs: [{ w: '28%' }, { w: '38%', ml: '30%' }, { w: '24%', ml: '72%' }], color: 'linear-gradient(90deg,#149bff,#67e8ff)' },
-    { label: 'audio', segs: [{ w: '96%' }], color: 'linear-gradient(90deg,#18acff,#82f0ff)', opacity: 0.7 },
+    { label: 'video', segs: [{ w: '28%' }, { w: '38%', ml: '30%' }, { w: '24%', ml: '72%' }], color: 'linear-gradient(90deg,#FF3333,#FF8888)' },
+    { label: 'audio', segs: [{ w: '96%' }], color: 'linear-gradient(90deg,#FF4444,#FF9999)', opacity: 0.7 },
     { label: 'text', segs: [{ w: '16%', ml: '4%' }], color: 'linear-gradient(90deg,#7c3aed,#a78bfa)' },
   ];
 
@@ -179,13 +179,13 @@ function HeroEditorMock() {
                 <span style={{ fontSize: 9.5, color: 'rgba(255,255,255,0.6)' }}>0:13 / 7:42</span>
               </div>
               <div style={{ height: 2, background: 'rgba(255,255,255,0.15)', borderRadius: 1, position: 'relative' }}>
-                <div style={{ width: '28%', height: '100%', background: '#21d4ff', borderRadius: 1 }} />
+                <div style={{ width: '28%', height: '100%', background: '#FF0000', borderRadius: 1 }} />
                 <div style={{
                   position: 'absolute', top: '50%', left: '28%',
                   transform: 'translate(-50%, -50%)',
                   width: 8, height: 8, borderRadius: '50%',
-                  background: '#21d4ff',
-                  boxShadow: '0 0 6px rgba(33,212,255,0.7)',
+                  background: '#FF0000',
+                  boxShadow: '0 0 6px rgba(255,0,0,0.7)',
                 }} />
               </div>
             </div>
@@ -286,10 +286,10 @@ function HeroEditorMock() {
                   <div style={{ padding: '7px 10px' }}>
                     <button style={{
                       width: '100%', padding: '6px',
-                      background: 'rgba(33,212,255,0.1)',
-                      border: '1px solid rgba(33,212,255,0.28)',
+                      background: 'rgba(255,0,0,0.1)',
+                      border: '1px solid rgba(255,0,0,0.28)',
                       borderRadius: 5, fontSize: 11, fontWeight: 500,
-                      color: '#21d4ff', cursor: 'pointer', fontFamily: 'inherit',
+                      color: '#FF0000', cursor: 'pointer', fontFamily: 'inherit',
                     }}>
                       Start review →
                     </button>
@@ -359,9 +359,9 @@ function ChatFlowMock() {
               <div style={{ padding: '0 12px 8px', display: 'flex', gap: 5 }}>
                 {['@1 · 1:24', '@2 · 3:07', '@3 · 5:51'].map(m => (
                   <div key={m} style={{
-                    fontSize: 10, color: '#21d4ff',
-                    background: 'rgba(33,212,255,0.08)',
-                    border: '1px solid rgba(33,212,255,0.2)',
+                    fontSize: 10, color: '#FF0000',
+                    background: 'rgba(255,0,0,0.08)',
+                    border: '1px solid rgba(255,0,0,0.2)',
                     borderRadius: 4, padding: '2px 6px',
                   }}>{m}</div>
                 ))}
@@ -413,12 +413,12 @@ function TimelineMock() {
     {
       label: 'video',
       segs: [{ l: '0%', w: '28%' }, { l: '30%', w: '38%' }, { l: '72%', w: '24%' }],
-      color: 'linear-gradient(90deg,#149bff,#67e8ff)',
+      color: 'linear-gradient(90deg,#FF3333,#FF8888)',
     },
     {
       label: 'audio',
       segs: [{ l: '0%', w: '97%' }],
-      color: 'linear-gradient(90deg,#18acff,#82f0ff)',
+      color: 'linear-gradient(90deg,#FF4444,#FF9999)',
       opacity: 0.7,
     },
     {
@@ -471,9 +471,9 @@ function TimelineMock() {
                 <div key={m.label} style={{
                   position: 'absolute', top: '50%', left: m.pos,
                   transform: 'translate(-50%,-50%)',
-                  fontSize: 8.5, fontWeight: 700, color: '#21d4ff',
-                  background: 'rgba(33,212,255,0.12)',
-                  border: '1px solid rgba(33,212,255,0.3)',
+                  fontSize: 8.5, fontWeight: 700, color: '#FF0000',
+                  background: 'rgba(255,0,0,0.12)',
+                  border: '1px solid rgba(255,0,0,0.3)',
                   borderRadius: 3, padding: '1px 4px',
                 }}>{m.label}</div>
               ))}

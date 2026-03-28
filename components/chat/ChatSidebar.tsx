@@ -1633,7 +1633,7 @@ function MusicCueCard({
       )}
       {isSuggested && (
         <div style={{ display: 'flex', gap: 6 }}>
-          <button type="button" onClick={() => onAccept(cue)} style={{ flex: 1, border: '1px solid var(--accent)', borderRadius: 6, background: 'rgba(33,212,255,0.08)', color: 'var(--accent)', fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
+          <button type="button" onClick={() => onAccept(cue)} style={{ flex: 1, border: '1px solid var(--accent)', borderRadius: 6, background: 'rgba(255,0,0,0.08)', color: 'var(--accent)', fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
             Add to timeline
           </button>
           <button type="button" onClick={() => onReject(cue.id)} style={{ flex: 1, border: '1px solid var(--border-mid)', borderRadius: 6, background: 'rgba(255,255,255,0.04)', color: 'var(--fg-secondary)', fontSize: 11, padding: '4px 8px', cursor: 'pointer', fontFamily: 'var(--font-serif)' }}>
@@ -2141,11 +2141,11 @@ function AssistantMessage({
                           gap: 10,
                           padding: '10px 12px',
                           borderRadius: 12,
-                          border: isFocused ? '1px solid rgba(33,212,255,0.34)' : '1px solid rgba(255,255,255,0.08)',
+                          border: isFocused ? '1px solid rgba(255,0,0,0.34)' : '1px solid rgba(255,255,255,0.08)',
                           background: isFocused
-                            ? 'linear-gradient(180deg, rgba(33,212,255,0.12), rgba(255,255,255,0.04))'
+                            ? 'linear-gradient(180deg, rgba(255,0,0,0.12), rgba(255,255,255,0.04))'
                             : 'linear-gradient(180deg, rgba(255,255,255,0.045), rgba(255,255,255,0.02))',
-                          boxShadow: isFocused ? '0 0 0 1px rgba(33,212,255,0.08)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
+                          boxShadow: isFocused ? '0 0 0 1px rgba(255,0,0,0.08)' : 'inset 0 1px 0 rgba(255,255,255,0.03)',
                         }}
                       >
                         <ReviewCheckboxButton
@@ -2421,7 +2421,7 @@ function ProgressStatusCard({
             display: 'inline-flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'rgba(33,212,255,0.92)',
+            color: 'rgba(255,0,0,0.92)',
             flexShrink: 0,
           }}>
             <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -2450,8 +2450,8 @@ function ProgressStatusCard({
           <div style={{
             width: `${Math.max((targetProgress ?? 0.06) * 100, 4)}%`,
             height: '100%',
-            background: 'linear-gradient(90deg, rgba(33,212,255,0.78), rgba(125,211,252,1))',
-            boxShadow: '0 0 18px rgba(33,212,255,0.22)',
+            background: 'linear-gradient(90deg, rgba(255,0,0,0.78), rgba(255,80,80,1))',
+            boxShadow: '0 0 18px rgba(255,0,0,0.22)',
             transition: 'width 0.45s cubic-bezier(0.22, 1, 0.36, 1)',
           }} />
         </div>

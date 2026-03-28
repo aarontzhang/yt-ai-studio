@@ -78,7 +78,7 @@ export default function LoginPage() {
           box-sizing: border-box;
           transition: border-color 0.15s;
         }
-        .auth-input:focus { border-color: rgba(33,212,255,0.45); }
+        .auth-input:focus { border-color: rgba(255,0,0,0.45); }
         .auth-input::placeholder { color: rgba(255,255,255,0.22); }
         .auth-back {
           display: inline-flex;
@@ -118,7 +118,7 @@ export default function LoginPage() {
           width: 600,
           height: 400,
           borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(33,212,255,0.07) 0%, transparent 70%)',
+          background: 'radial-gradient(ellipse, rgba(255,0,0,0.07) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
 
@@ -249,7 +249,7 @@ export default function LoginPage() {
                 Don&apos;t have an account?{' '}
                 <button
                   onClick={() => switchMode('signup')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(33,212,255,0.75)', fontSize: 13, padding: 0, fontFamily: 'inherit' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,0,0,0.75)', fontSize: 13, padding: 0, fontFamily: 'inherit' }}
                 >
                   Create one
                 </button>
@@ -259,7 +259,7 @@ export default function LoginPage() {
                 Already have an account?{' '}
                 <button
                   onClick={() => switchMode('signin')}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(33,212,255,0.75)', fontSize: 13, padding: 0, fontFamily: 'inherit' }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,0,0,0.75)', fontSize: 13, padding: 0, fontFamily: 'inherit' }}
                 >
                   Sign in
                 </button>

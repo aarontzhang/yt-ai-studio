@@ -45,14 +45,14 @@ export default function ClipBlock({
         height,
         background: color.bg,
         borderRadius: 4,
-        border: `1.5px solid ${isSelected ? 'var(--accent)' : isTagged ? 'rgba(125,211,252,0.9)' : color.border}`,
+        border: `1.5px solid ${isSelected ? 'var(--accent)' : isTagged ? 'rgba(255,100,100,0.9)' : color.border}`,
         outline: isSelected ? '1.5px solid rgba(255,255,255,0.2)' : undefined,
         outlineOffset: isSelected ? '1px' : undefined,
         boxSizing: 'border-box',
         overflow: 'hidden',
         cursor: 'pointer',
         userSelect: 'none',
-        boxShadow: isTagged ? '0 0 0 1px rgba(125,211,252,0.3)' : 'none',
+        boxShadow: isTagged ? '0 0 0 1px rgba(255,100,100,0.3)' : 'none',
       }}
       onClick={onSelect}
     >

@@ -1257,7 +1257,7 @@ const TimelinePlayheadOverlay = memo(function TimelinePlayheadOverlay({
           background: 'var(--accent)',
           cursor: 'ew-resize',
           zIndex: 16,
-          boxShadow: '0 0 0 3px rgba(33,212,255,0.12)',
+          boxShadow: '0 0 0 3px rgba(255,0,0,0.12)',
           pointerEvents: 'none',
         }}
       />
