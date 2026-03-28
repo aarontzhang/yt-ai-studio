@@ -1,21 +1,21 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* YouTube AI Studio — dark neutral base with YouTube Studio accents */
+/* Autocut — dark neutral base with iridescent accents */
 :root {
-  --bg-base:     #0f0f0f;
-  --bg-panel:    #181818;
-  --bg-elevated: #212121;
-  --bg-surface:  #282828;
-  --bg-hover:    #3d3d3d;
+  --bg-base:     #111111;
+  --bg-panel:    #171717;
+  --bg-elevated: #1e1e1e;
+  --bg-surface:  #252525;
+  --bg-hover:    #2e2e2e;
 
-  --accent:        #3ea6ff;
-  --accent-strong: #65b8ff;
-  --accent-dim:    rgba(62, 166, 255, 0.18);
-  --accent-border: rgba(62, 166, 255, 0.42);
-  --accent-ink:    #0f0f0f;
+  --accent:        #21d4ff;
+  --accent-strong: #b8f3ff;
+  --accent-dim:    rgba(33, 212, 255, 0.18);
+  --accent-border: rgba(33, 212, 255, 0.42);
+  --accent-ink:    #04101f;
   --accent-gradient: linear-gradient(135deg, #f8fbff 0%, #ffffff 100%);
-  --accent-gradient-soft: linear-gradient(135deg, rgba(62, 166, 255, 0.18) 0%, rgba(62, 166, 255, 0.12) 100%);
+  --accent-gradient-soft: linear-gradient(135deg, rgba(33, 212, 255, 0.18) 0%, rgba(64, 122, 255, 0.12) 100%);
   --surface-gradient: linear-gradient(180deg, rgba(32, 32, 32, 0.96) 0%, rgba(18, 18, 18, 0.98) 100%);
   --logo-tile: linear-gradient(180deg, #ffffff 0%, #f1f4fb 100%);
 
@@ -38,9 +38,9 @@
   --border-mid:   rgba(255, 255, 255, 0.12);
 
   --playhead:    #ffffff;
-  --selection:   rgba(62, 166, 255, 0.24);
+  --selection:   rgba(33, 212, 255, 0.24);
 
-  /* ── YouTube Studio tokens (additive — YouTube AI Studio tokens above are untouched) ── */
+  /* ── YouTube Studio tokens (additive — Autocut tokens above are untouched) ── */
 
   /* Backgrounds */
   --yt-bg-base:         #0f0f0f;
@@ -100,7 +100,7 @@
 @theme inline {
   --color-background: var(--bg-base);
   --color-foreground: var(--fg-primary);
-  --font-sans: var(--font-roboto), var(--font-serif);
+  --font-sans: var(--font-serif);
   --font-mono: var(--font-mono);
 
   /* YouTube Studio colors */
@@ -332,15 +332,15 @@ a { color: inherit; }
 
 .chat-review-checkbox:focus-visible .chat-review-checkbox__box {
   box-shadow:
-    0 0 0 2px rgba(62, 166, 255, 0.22),
+    0 0 0 2px rgba(33, 212, 255, 0.22),
     inset 0 1px 0 rgba(255,255,255,0.08);
 }
 
 .chat-review-checkbox[data-checked="true"] .chat-review-checkbox__box {
-  border-color: rgba(62, 166, 255, 0.72);
-  background: linear-gradient(180deg, rgba(62, 166, 255, 0.98), rgba(62, 166, 255, 0.82));
+  border-color: rgba(33, 212, 255, 0.72);
+  background: linear-gradient(180deg, rgba(93, 234, 255, 0.98), rgba(33, 212, 255, 0.82));
   box-shadow:
-    0 8px 18px rgba(62, 166, 255, 0.2),
+    0 8px 18px rgba(33, 212, 255, 0.2),
     inset 0 1px 0 rgba(255,255,255,0.35);
   color: var(--accent-ink);
 }

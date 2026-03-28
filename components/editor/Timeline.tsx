@@ -351,7 +351,7 @@ export default function Timeline({
   }, [pxToTimelineTime, seekToTimelineTime]);
 
   const canHandleTimelineDrop = useCallback((dataTransfer: DataTransfer) => (
-    Array.from(dataTransfer.types).includes('application/x-ytais-source-id')
+    Array.from(dataTransfer.types).includes('application/x-autocut-source-id')
     || Array.from(dataTransfer.types).includes('Files')
     || dataTransfer.files.length > 0
   ), []);
@@ -362,7 +362,7 @@ export default function Timeline({
     event.preventDefault();
     event.stopPropagation();
     const timelineTime = pxToTimelineTime(event.clientX, container);
-    const sourceId = event.dataTransfer.getData('application/x-ytais-source-id');
+    const sourceId = event.dataTransfer.getData('application/x-autocut-source-id');
     if (sourceId) {
       insertClipFromSource(sourceId, timelineTime);
       return;

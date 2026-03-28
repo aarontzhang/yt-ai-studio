@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { useRef, useState, useEffect } from 'react';
-import type { Project } from '@/lib/types';
+import type { Project } from '@/app/projects/page';
 import StorageQuotaBanner from '@/components/storage/StorageQuotaBanner';
 import type { StorageQuotaSnapshot } from '@/lib/storageQuota';
 

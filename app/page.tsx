@@ -8,7 +8,7 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (user) redirect('/content');
+  if (user) redirect('/projects');
 
   return <LandingPage />;
 }

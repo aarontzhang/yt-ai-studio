@@ -473,14 +473,3 @@ export interface SourceIndex {
   scenes: SceneBoundary[];
   indexedAt: string;
 }
-
-export interface Project {
-  id: string;
-  name: string;
-  video_filename: string | null;
-  video_size: number | null;
-  video_path: string | null;
-  thumbnailUrl: string | null;
-  created_at: string;
-  updated_at: string;
-}

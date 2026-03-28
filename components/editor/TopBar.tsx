@@ -5,7 +5,7 @@ import { useEditorStore } from '@/lib/useEditorStore';
 import { exportClips, isFFmpegAbortError } from '@/lib/ffmpegClient';
 import { useAuth } from '@/components/auth/AuthProvider';
 import UserProfileMenu from '@/components/auth/UserProfileMenu';
-import YouTubeAIStudioMark from '@/components/branding/YouTubeAIStudioMark';
+import AutocutMark from '@/components/branding/AutocutMark';
 import { describeSourceResolutionFailure, resolveProjectSources } from '@/lib/sourceMedia';
 export default function TopBar() {
   const videoFile = useEditorStore(s => s.videoFile);
@@ -122,17 +122,17 @@ export default function TopBar() {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginRight: 4 }}>
-        <YouTubeAIStudioMark size={24} />
+        <AutocutMark size={24} />
         <span
           style={{
             fontSize: 14,
             fontWeight: 600,
             color: 'var(--fg-primary)',
             letterSpacing: '-0.02em',
-            fontFamily: 'var(--font-sans)',
+            fontFamily: 'var(--font-serif)',
           }}
         >
-          YouTube AI Studio
+          Autocut
         </span>
       </div>
 
