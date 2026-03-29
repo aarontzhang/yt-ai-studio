@@ -1,5 +1,13 @@
 # YouTube AI Studio
 
+> **🏆 First Place — DeepMind at UCLA Hackathon**
+>
+> We built this in a weekend and somehow pulled off a win. Watch the demo video to see it in action — fair warning, we had way too much fun with the skits.
+>
+> **[Watch the demo video →](YOUR_VIDEO_LINK_HERE)**
+
+---
+
 A hackathon demo that embeds AI-powered video editing directly into the YouTube Creator Studio upload workflow. The app reskins a full-featured timeline editor to look and feel indistinguishable from YouTube Studio, inserting an intelligent AI editing step between video upload and the standard publish flow — showing what a native AI editor inside YouTube Studio could look like.
 
 ## What It Does
